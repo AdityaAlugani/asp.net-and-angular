@@ -20,10 +20,10 @@ export class AccountService {
   login(model:any)
   {
     return this.http.post<User>(this.baseUrl+"account/login",model).pipe(
-      map((response:User)=>{
+      map((response:User|null)=>{
         if(response)
         {
-          localStorage.setItem('user',JSON.stringify(response));
+          localStorage.setItem('user',JSON.stringify(response));  
           this.currentUserSource.next(response);
         }
       })
