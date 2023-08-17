@@ -1,0 +1,319 @@
+#---------------------------------------------------------------------------#
+#  Makefile created for build and test CORPLIBS(mtxml)
+#  
+#  Created by: dmajhi@micron.com
+#  Date: 06/01/2023
+#---------------------------------------------------------------------------#
+
+#-----------------------------------#
+# Common variables Declration 
+#-----------------------------------#
+
+CXX=/mu/bin/g++
+TARGET_DEFINITIONS = _REENTRANT NDEBUG _M_DLL MTXML2_LIBRARY_BUILD 
+LIBRARY_NAME = mtxml2
+LIB_NAME = libmtxml2
+TEST_TARGET = libmtxml2_shared_tester
+LINK = -shared
+LNS = ln -s
+LS	= ls -al
+CP	=	cp -a
+CHMOD = chmod 644
+CPPFLAGS = -g3 -O2 -fvisibility=hidden -fexceptions -shared -fpermissive -fPIC
+TEST_CPPFLAGS	= -g3 -O2 -fexceptions -shared -fpermissive  -fPIC
+TARGET_LDFLAGS = -pthread
+CURR_DIR	=	$(PWD)
+CORPBUILD	=	/home/hemahanumaku/corpbuild
+#CORPBUILD	=	/mu/mtapps/corp/test_common.sh
+#CORPBUILD	=	/mu/mtapps/corp/
+SH_FILE	=	test_common.sh
+
+#source $(CORPBUILD)/$(SH_FILE)
+
+
+#-------------------------------------#
+# Shared libraries mtxml variables
+#-------------------------------------#
+RUNTIME_PATH = /mu/mtsdk/corplib/gcc540/lib:/home/sysprog/libraries/build/gcc540-rhel7/libmtcrypto_static:/mu/mtsdk/corplib/gcc540/lib:/mu/sdk/xerces/3.2.3-gcc540-rhel7-64/lib:/mu/sdk/xalan/1.12-gcc540-rhel7-64/lib:/mu/dev/gcc/540/lib64 -L.
+LIBDIRS = /home/sysprog/libraries/stage/Linux/MU-RHEL70/gcc540/lib /mu/mtsdk/corplib/gcc540/lib /home/sysprog/libraries/build/gcc540-rhel7/libmtcrypto_static /mu/mtsdk/corplib/gcc540/lib /mu/sdk/xerces/3.2.3-gcc540-rhel7-64/lib /mu/sdk/xalan/1.12-gcc540-rhel7-64/lib /mu/dev/gcc/540/lib64
+LIBRARIES = mtcrypto xerces-c xalan-c mipc 
+
+SHARED_LIBS        = -Wl,--enable-new-dtags -Wl,-rpath,$(RUNTIME_PATH) $(addprefix -L,$(LIBDIRS)) $(addprefix -l,$(LIBRARIES))
+INCS += /mu/sdk/xerces/3.2.3-gcc540-rhel7-64/include /mu/sdk/xalan/1.12-gcc540-rhel7-64/include /home/sysprog/libraries/stage/Linux/MU-RHEL70/gcc540/include /mu/mtsdk/corplib/gcc540/include /opt/Agent_21722/_work/1/s/include
+
+#---------------------------------
+# Make install
+#--------------------------------
+#INC_DESTINATION	= /home/sysprog/libraries/stage/Linux/MU-RHEL70/gcc540/include 
+#LIB_DESTINATION	= /home/sysprog/libraries/stage/Linux/MU-RHEL70/gcc540/lib 
+#INC_DIRS     += /mu/sdk/xerces/3.2.3-gcc540-rhel7-64/include /mu/sdk/xalan/1.12-gcc540-rhel7-64/include
+#LIB_DIRS     += /mu/sdk/xerces/3.2.3-gcc540-rhel7-64/lib /mu/sdk/xalan/1.12-gcc540-rhel7-64/lib
+
+
+INC_DESTINATION	= /home/hemahanumaku/stage/Linux/MU-RHEL70/gcc540/include 
+LIB_DESTINATION	= /home/hemahanumaku/stage/Linux/MU-RHEL70/gcc540/lib
+
+
+MU_INC_DEST	= /home/hemahanumaku/mu/mtsdk/corplib/gcc540/include 
+MU_LIB_DEST	= /home/hemahanumaku/mu/mtsdk/corplib/gcc540/lib 
+
+
+# Make stage_promote 
+#--------------------------------
+#INC_DESTINATION	= /mu/mtsdk/corplib/gcc540/include 
+#LIB_DESTINATION	= /mu/mtsdk/corplib/gcc540/lib 
+
+#INC_DESTINATION	= /home/corplib/dmajhi/mu/mtsdk/corplib/gcc540/include 
+#LIB_DESTINATION	= /home/corplib/dmajhi/mu/mtsdk/corplib/gcc540/lib 
+#----------------------------------------#
+# test libraries variables
+#----------------------------------------#
+
+TEST_RUNTIIME_PATH	= /mu/dev/cppunit/1.10.2-gcc443-rhel5-64/lib:/home/sysprog/libraries/stage/Linux/MU-RHEL70/gcc540/lib:/mu/mtsdk/corplib/gcc540/lib:/home/sysprog/libraries/build/gcc540-rhel7/libmtcrypto_static:/mu/mtsdk/corplib/gcc540/lib:/mu/sdk/xerces/3.2.3-gcc540-rhel7-64/lib:/mu/sdk/xalan/1.12-gcc540-rhel7-64/lib:/mu/dev/gcc/540/lib64:/mu/mtsdk/corplib/gcc540/lib:/home/sysprog/libraries/build/gcc540-rhel7/libmtcrypto_static:/mu/mtsdk/corplib/gcc540/lib:/mu/sdk/xerces/3.2.3-gcc540-rhel7-64/lib:/mu/sdk/xalan/1.12-gcc540-rhel7-64/lib:/mu/dev/gcc/540/lib64
+
+TEST_LIBDIRS	=	/mu/dev/cppunit/1.10.2-gcc443-rhel5-64/lib \
+					/home/sysprog/libraries/stage/Linux/MU-RHEL70/gcc540/lib \
+					/mu/mtsdk/corplib/gcc540/lib \
+					/home/sysprog/libraries/build/gcc540-rhel7/libmtcrypto_static \
+					/mu/mtsdk/corplib/gcc540/lib /mu/sdk/xerces/3.2.3-gcc540-rhel7-64/lib \
+					/mu/sdk/xalan/1.12-gcc540-rhel7-64/lib /mu/dev/gcc/540/lib64
+
+TEST_LIBRARIES	=	mtxml2 cppunit mipc mtmessage cmtexception
+
+TEST_SHARED_LIBS = -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,$(TEST_RUNTIIME_PATH) $(addprefix -L,$(TEST_LIBDIRS)) $(addprefix -l,$(TEST_LIBRARIES))
+
+TEST_INCS =	/mu/dev/cppunit/1.10.2-gcc443-rhel5-64/include \
+			/home/sysprog/libraries/stage/Linux/MU-RHEL70/gcc540/include \
+			/mu/mtsdk/corplib/gcc540/include \
+			/mu/sdk/xerces/3.2.3-gcc540-rhel7-64/include \
+			/mu/sdk/xalan/1.12-gcc540-rhel7-64/include
+
+#--------------#
+# Sorce files
+#--------------#
+
+SRC_FILES = src/cmtxmlattr2w.cpp src/cmtxmlcdata2w.cpp src/cmtxmlcomment2w.cpp src/cmtxmldata.cpp \
+			src/cmtxmldata2.cpp src/cmtxmldata2w.cpp src/cmtxmldataimpl2w.cpp src/cmtxmldataimplw.cpp \
+			src/cmtxmldocument2w.cpp src/cmtxmlelement2w.cpp src/cmtxmlerrhandlerw.cpp src/cmtxmlimplutils2.cpp \
+			src/cmtxmlmsg.cpp src/cmtxmlmsg2.cpp src/cmtxmlmsg2w.cpp src/cmtxmlmsgheader.cpp \
+			src/cmtxmlmsgheaderimpl.cpp src/cmtxmlmsgimpl.cpp src/cmtxmlmsgimpl2.cpp src/cmtxmlnode2.cpp \
+			src/cmtxmlnode2w.cpp src/cmtxmlnodeimpl2.cpp src/cmtxmlpi2w.cpp src/cmtxmlutils2.cpp src/cmtxsl2.cpp \
+			src/cmtxsl2w.cpp src/cmtxslimpl2w.cpp src/cmtxmlmsgutil.cpp
+
+#SRC_FILES = cmtxmlattr2w.cpp cmtxmlcdata2w.cpp cmtxmlcomment2w.cpp cmtxmldata.cpp \
+			cmtxmldata2.cpp cmtxmldata2w.cpp cmtxmldataimpl2w.cpp cmtxmldataimplw.cpp \
+			cmtxmldocument2w.cpp cmtxmlelement2w.cpp cmtxmlerrhandlerw.cpp cmtxmlimplutils2.cpp \
+			cmtxmlmsg.cpp cmtxmlmsg2.cpp cmtxmlmsg2w.cpp cmtxmlmsgheader.cpp \
+			cmtxmlmsgheaderimpl.cpp cmtxmlmsgimpl.cpp cmtxmlmsgimpl2.cpp cmtxmlnode2.cpp \
+			cmtxmlnode2w.cpp cmtxmlnodeimpl2.cpp cmtxmlpi2w.cpp cmtxmlutils2.cpp cmtxsl2.cpp \
+			cmtxsl2w.cpp cmtxslimpl2w.cpp cmtxmlmsgutil.cpp
+#------------------#
+#header files:
+#------------------#
+#HEADERS = include/cmtxmlattr2.h include/cmtxmlcdata2.h include/cmtxmlcomment2.h include/cmtxmldata.h \
+		  include/cmtxmldata2.h include/cmtxmldocument2.h include/cmtxmlelement2.h include/cmtxmlexception.h \
+		  include/cmtxmlexception2.h include/cmtxmlmsg.h include/cmtxmlmsg2.h include/cmtxmlmsgexception.h \
+		  include/cmtxmlmsgheader.h include/cmtxmlnode2.h include/cmtxmlpi2.h include/cmtxmlutils2.h \
+		  include/cmtxsl2.h include/cmtxmlmsgutil.h
+
+DEPLOYABLE_HEADERS=include/cmtxmlattr2.h include/cmtxmlcdata2.h include/cmtxmlcomment2.h include/cmtxmldata.h \
+		  include/cmtxmldata2.h include/cmtxmldocument2.h include/cmtxmlelement2.h include/cmtxmlexception.h \
+		  include/cmtxmlexception2.h include/cmtxmlmsg.h include/cmtxmlmsg2.h include/cmtxmlmsgexception.h \
+		  include/cmtxmlmsgheader.h include/cmtxmlnode2.h include/cmtxmlpi2.h include/cmtxmlutils2.h \
+		  include/cmtxsl2.h include/cmtxmlmsgutil.h
+
+NON_DEPLOYABLE_HEADERS =  include/auto_ptr_array.h include/cmtxmldataimpl2w.h include/cmtxmldataimplw.h \
+			include/cmtxmlerrhandlerw.h include/cmtxmlimplutils2.h include/cmtxmlmsgheaderimpl.h \
+			include/cmtxmlmsgimpl.h include/cmtxmlmsgimpl2.h include/cmtxmlnodeimpl2.h \
+			include/cmtxslimpl2w.h include/hexbincv.hpp include/mtxml2_resource.h
+#-------------------#
+#Test source files
+#------------------#
+
+TEST_SRCS = src/UnitTests/MTXML2CppUnitTests.cpp src/UnitTests/CMTXMLDocument2Tests.cpp src/UnitTests/CMTXMLNode2Tests.cpp src/UnitTests/CMTXMLMsg2Tests.cpp \
+            src/UnitTests/CMTXMLData2Tests.cpp src/UnitTests/CMTXMLElement2Tests.cpp src/UnitTests/CMTXSL2Tests.cpp src/UnitTests/CMTXMLDataTests.cpp
+
+#------------------#
+# Test header files:
+#------------------#
+
+TEST_HDRS = MTXML2CppUnitTests.h CMTXMLDocument2Tests.h CMTXMLNode2Tests.h CMTXMLMsg2Tests.h \
+			CMTXMLData2Tests.h CMTXMLElement2Tests.h CMTXSL2Tests.h employees.xml employees.xsl \
+			mtxml2test.xml mtxml2test.xsd mtxml2testInvalid.xml mtxml2testns.xml mtxml2testns.xsd \
+			xsltest1.xml xsltest1.xsl xsltest2.xml xsltest2.xsl xsltest3.xml CMTXMLDataTests.h
+
+TEST_DEFINITIONS = _REENTRANT NDEBUG _M_DLL MTXML2_LIBRARY_BUILD XERCES3_ERRMSG
+
+ifdef WIDE_TEST
+    TEST_DEFINITIONS += MTXML2W_TEST
+endif
+
+
+TEST_LIBS = cppunit mipc mtmessage cmtexception
+
+#-----------------------------------#
+# Version tag updation for CORPLIB
+#-----------------------------------#
+
+ifeq ($(strip $(RELEASE)),)
+override LIB_EXT := dev
+else
+	ifneq (,$(findstring _,$(RELEASE)))
+		RELEASE_TEMP := $(RELEASE)
+		ifneq (,$(findstring /,$(RELEASE_TEMP)))
+			RELEASE_TEMP := $(shell echo $(RELEASE_TEMP) | awk -F\/ '{print $$1}')
+		endif
+			override LIB_EXT := $(shell echo $(RELEASE_TEMP) | awk -F\_ '{print $$2}')
+	else
+		override LIB_EXT := $(RELEASE)
+	endif
+endif
+
+override LIB_NAME          := lib$(LIBRARY_NAME)
+override SHARED_LIB        := $(LIB_NAME).so.$(LIB_EXT)
+
+#-----------------------------------------#
+# Make all libs
+#-----------------------------------------#
+#.PHONY: all 
+#all: build depends 
+all: build 
+
+#----------------------------------------#
+#Builing shared object (.so) for CORPLIB:
+#----------------------------------------#
+
+
+
+OBJS = $(SRC_FILES:%.cpp=%.o)
+
+build: $(OBJS)
+	$(RM) *.so.*
+	$(CXX) $(LINK) -o $(SHARED_LIB) $(OBJS) $(TARGET_LDFLAGS) $(SHARED_LIBS)
+	$(RM) libmtxml2.so 
+	$(LNS) $(SHARED_LIB) libmtxml2.so  
+
+#---------------------------------#
+#Building object filed (.o) files:
+#---------------------------------#
+
+$(OBJS):%.o :%.cpp
+	@echo "CORPLIB compilation starts..."
+	$(CXX) -c $(CPPFLAGS) $(addprefix -D,$(TARGET_DEFINITIONS)) $(addprefix -I,$(INCS)) -o $@ $<
+	@echo "COPRPLIB ompilation completed"
+
+#--------------------------------------#
+#Building shared object (.so) for test
+#--------------------------------------#
+TEST_OBJS= $(TEST_SRCS:%.cpp=%.o)
+
+.PHONY: depends 
+depends: $(TEST_OBJS)
+	@echo "Test linking starts ...!!!"
+	$(CXX) -o  $(TEST_TARGET) $(TEST_OBJS) $(TARGET_LDFLAGS) $(TEST_SHARED_LIBS)
+	@echo "Test linking completed"
+	@echo "Please use make test to run test-case"
+
+#------------------------------------------#
+#Building object filed (.o) files for test
+#------------------------------------------#
+
+$(TEST_OBJS): %.o :%.cpp
+	@echo "test compilation starts "
+	$(CXX) -c $(TEST_CPPFLAGS) $(addprefix -D,$(TEST_DEFINITIONS)) $(addprefix -I,$(TEST_INCS)) -o $@ $<
+	@echo "test compilation completed"
+
+
+#.SILENT:TEST_SC
+.PHONY:TEST_SC
+TEST_SC:
+		#@echo " TEST_SC --> $(LIB_NAME).so"
+		@echo " TEST_SC --> $(SHARED_LIB)--->$(LIB_EXT)"
+#--------------------------------#
+# clean the libraries:
+#--------------------------------#
+.PHONY: clean
+clean:
+	@echo " clean starts..."
+	$(RM) $(SHARED_LIB)
+	$(RM) $(TEST_TARGET)
+	$(RM) $(OBJS)
+	$(RM) $(TEST_OBJS)
+	$(RM) *.so 
+	$(RM) *.o
+
+#-----------------------------#
+# Running test-case
+#----------------------------#
+.PHONY: test
+test: depends
+	@echo "running test case!!!"
+	./$(TEST_TARGET)
+
+# Need to be deleted  from here........
+#-----------------------------------------------------------	
+
+.PHONY: LIB_TEST
+LIB_TEST:
+		#@echo  -e "Promote (copy) libraries\nfrom: $(CURR_DIR)\nto: $(LIB_DESTINATION)"
+		#@echo "-$(SHARED_LIB)"
+		#@echo "Change symbolic links"
+		#@echo -e "Promote (copy) headers\nfrom: $(CURR_DIR)\nto: $(INC_DESTINATION)"
+		#@echo "$(DEPYLOYABLE_HEADERS)" 
+
+			#$(CP)	$(SHARED_LIB)	$(LIB_DESTINATION);
+			#$(CP)	$(DEPYLOYABLE_HEADERS)	$(INC_DESTINATION);
+		 	#echo "$(shell ./linkLib.sh)"; 
+			#$(PWD); 
+
+#.SILENT:TEST_SC
+#TEST_SC:
+		@echo " TEST_SC --> $(LIB_NAME).so"
+		#@echo " TEST_SC --> $(SHARED_LIB)--->$(LIB_EXT)"
+		#$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB) 
+		$(CORPBUILD) sharedLibName $(SHARED_LIB) 
+		#$(CORPBUILD)/$(SH_FILE) muLibPath $(LIB_DESTINATION) $(MU_LIB_DEST)
+		#./test_common.sh muIncPath $(INC_DESTINATION) $(MU_INC_DEST)
+		#./test_common.sh cpHdr_to_mu $(DEPYLOYABLE_HEADERS) $(INC_DESTINATION) $(MU_INC_DEST)
+		#$(CORPBUILD)/$(SH_FILE) linkingLib_stg $(LIB_DESTINATION) $(SHARED_LIB) $(LIB_NAME).so
+		#$(CORPBUILD)/$(SH_FILE) linkingLib_mu $(MU_LIB_DEST) $(SHARED_LIB) $(LIB_NAME).so
+		#./test_common.sh cpHdr_to_stage $(DEPYLOYABLE_HEADERS) $(CURR_DIR) $(INC_DESTINATION)
+		#./test_common.sh cpLib_to_stage $(SHARED_LIB) $(CURR_DIR) $(LIB_DESTINATION)
+		#./test_common.sh cpLib_to_mu $(SHARED_LIB) $(LIB_DESTINATION) $(MU_LIB_DEST)
+		#$(CORPBUILD)/$(SH_FILE) hdrFilePermission_stg $(DEPLOYABLE_HEADERS) $(INC_DESTINATION)
+		#$(CORPBUILD)/$(SH_FILE) hdrFilePermission_stg $(DEPLOYABLE_HEADERS)
+
+#-----------------------------------------------------------
+
+# Delete upto here......
+
+#------------------------------#
+# Make install
+#------------------------------#
+
+.SILENT: install 
+install: 
+		$(CORPBUILD)/$(SH_FILE) stgLibPath $(LIB_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB) 
+		$(CORPBUILD)/$(SH_FILE) stgIncPath $(INC_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) deployHeaderList $(DEPLOYABLE_HEADERS)
+		$(CORPBUILD)/$(SH_FILE) cpHdr_to_stage $(DEPLOYABLE_HEADERS) $(CURR_DIR) $(INC_DESTINATION) 
+		$(CORPBUILD)/$(SH_FILE) hdrFilePermission_stg $(DEPLOYABLE_HEADERS) $(INC_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) cpLib_to_stage $(SHARED_LIB) $(CURR_DIR) $(LIB_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) linkingLib_stg $(LIB_DESTINATION) $(SHARED_LIB) $(LIB_NAME).so
+
+#------------------------------#
+# Make stage_promote 
+# -----------------------------#
+
+.SILENT: stage_promote 
+stage_promote: 
+		$(CORPBUILD)/$(SH_FILE) muLibPath $(LIB_DESTINATION) $(MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB)
+		$(CORPBUILD)/$(SH_FILE) muIncPath $(INC_DESTINATION) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) deployHeaderList $(DEPLOYABLE_HEADERS)
+		$(CORPBUILD)/$(SH_FILE) cpHdr_to_mu $(DEPLOYABLE_HEADERS) $(INC_DESTINATION) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) hdrFilePermission_mu $(DEPLOYABLE_HEADERS) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) cpLib_to_mu $(SHARED_LIB) $(LIB_DESTINATION) $(MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) linkingLib_mu $(MU_LIB_DEST) $(SHARED_LIB) $(LIB_NAME).so
+
