@@ -357,3 +357,108 @@ clean:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#==============================================================================
+# File:          $HeadURL: http://svn/corp/DirSvc/MTGroups/trunk/MTGroups80/branches/x64/trunk/Makefile.lib_config $
+# Revision:      $LastChangedRevision: 15216 $
+# Modified By:   $LastChangedBy: ddlalum $
+# Modified Date: $LastChangedDate: 2010-11-05 11:13:31 -0600 (Fri, 05 Nov 2010) $
+#
+#     This file is used with lbsmake to build and deploy the library.
+#     "lbsmake test" will build either a MBCS or wide regression tester depending on whether
+#     MTXML2W_TEST defined. Wide tests can be run as follows:
+#
+#       lbsmake test_clean; WIDE_TEST=1 lbsmake test
+#
+# Regression testing is implemented with cppunit.
+#
+#==============================================================================
+ 
+LIBRARY_NAME          = mtgroups
+LIBRARY_CONTACTS      = ww_layered_gm_l2@micron.com
+
+DEFINITIONS   = _REENTRANT NDEBUG _M_DLL MTGROUPS_LIBRARY_BUILD
+ifdef WIDE_TEST
+    DEFINITIONS += MTGROUPSW_TEST 
+endif
+ifeq ($(DISK_BUILD), TRUE)      #DISK Build Settings
+        SRC_REPOSITORY = DISK
+		SRC_DIR         = source
+		INC_DIRS    = include
+	    SRC_FILES     = cmtgroup.cpp cmtgroupssockets.cpp cmtgroupssocketsw.cpp cmtgroupw.cpp \
+		 				cmtldap.cpp cmtldapw.cpp cmtworker.cpp cmtworkerw.cpp \
+		  				mtgroupscapi.cpp mtgroupscapiw.cpp mtgroupslibrary.cpp mtgroups.c
+		TEST_SRC_DIR = source/UnitTests
+
+else
+ifeq ($(OS_MAJOR_VERSION), 7) #RHEL 7 host (GCC 5.4.0)
+SRC_REPOSITORY = SVN
+SRC_SVN_REPOSITORY_DIRECTORY = http://svn/corp/DirSvc/MTGroups/trunk/MTGroups141
+TEST_SRC_SVN_REPOSITORY_DIRECTORY = http://svn/corp/DirSvc/MTGroups/trunk/MTGroups141
+else
+SRC_REPOSITORY = SVN
+SRC_SVN_REPOSITORY_DIRECTORY = http://svn/corp/DirSvc/MTGroups/trunk/MTGroups100
+TEST_SRC_SVN_REPOSITORY_DIRECTORY = http://svn/corp/DirSvc/MTGroups/trunk/MTGroups100
+endif
+SRC_FILES     = source/cmtgroup.cpp source/cmtgroupssockets.cpp source/cmtgroupssocketsw.cpp source/cmtgroupw.cpp \
+		        source/cmtldap.cpp source/cmtldapw.cpp source/cmtworker.cpp source/cmtworkerw.cpp \
+		        source/mtgroupscapi.cpp source/mtgroupscapiw.cpp source/mtgroupslibrary.cpp source/mtgroups.c
+endif
+
+DEPLOYABLE_HEADERS = include/cmtgroups.h include/mtgroups.h include/mtgroupscapi.h
+
+NON_DEPLOYABLE_HEADERS =  include/cmtgroupssockets.h include/cmtldap.h include/mtgroupswmacros.h
+
+CPPFLAGS = -g3 -O2 -fvisibility=hidden -fexceptions -Wno-deprecated-declarations
+
+# Since it is unlikely that apps consuming this library will built with hidden symbols,
+# remove this option for the binary created by "lbsmake test"
+ifeq ($(WHICH),test)
+	CPPFLAGS := $(filter-out -fvisibility=hidden,$(CPPFLAGS))
+endif
+
+STATIC    = FALSE
+LIBRARIES = ldap mipc mtsecurity mtdatetime mtmessage mtmailpage
+
+ifeq ($(OS), SunOS)
+    DESTINATION  = MU-SUNOS58-GCC422
+    INC_DIRS     = 
+    LIB_DIRS     = 
+endif
+
+ifeq ($(OS), Linux)
+	ifeq ($(OS_MAJOR_VERSION), 7) #RHEL 7 host (GCC 5.4.0)
+    DESTINATION  =  MU-RHEL70-GCC540
+    DEFINITIONS += LDAP_DEPRECATED
+	else
+    DESTINATION  =  MU-RHEL50-GCC422
+    DEFINITIONS += LDAP_DEPRECATED
+    INC_DIRS     = 
+    LIB_DIRS     = 
+	endif
+endif
+
+TEST_SRC_SVN_REPOSITORY_DIR_PATH = source/UnitTests
+TEST_SRC_DIR = source/UnitTests
+TEST_SRCS     = MTGroupsCppUnitTests.cpp CMTGroupsUnitTest.cpp CMTWorkerUnitTest.cpp \
+		        MTGroupsCAPIUnitTest.cpp MTWorkerCAPIUnitTest.cpp
+TEST_HDRS     = MTGroupsCppUnitTests.h
+TEST_INC_DIRS = /mu/dev/cppunit/1.10.2-gcc443-rhel5-64/include
+TEST_LIB_DIRS = /mu/dev/cppunit/1.10.2-gcc443-rhel5-64/lib
+TEST_LIBS     = cppunit
+
+
+
