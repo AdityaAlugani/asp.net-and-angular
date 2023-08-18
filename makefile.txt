@@ -317,3 +317,43 @@ stage_promote:
 		$(CORPBUILD)/$(SH_FILE) cpLib_to_mu $(SHARED_LIB) $(LIB_DESTINATION) $(MU_LIB_DEST)
 		$(CORPBUILD)/$(SH_FILE) linkingLib_mu $(MU_LIB_DEST) $(SHARED_LIB) $(LIB_NAME).so
 
+
+
+
+
+
+
+
+# the compiler: gcc for C program, define as g++ for C++
+# compiler flags:
+#   #  -g     - this flag adds debugging information to the executable file
+#  -Wall  - this flag is used to turn on most compiler warnings
+#    CFLAGS  = -g -Wall
+#     
+#   # The build target 
+
+CC=g++
+CFLAGS=-c -g3 -o2 
+
+TARGET = libmtxml2.so.dev
+
+#all: $(TARGET)
+#	$(TARGET): $(TARGET).c
+#	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c
+
+
+#clean:
+#	$(RM) $(TARGET)
+
+all:
+	$(CC) -shared -o $(TARGET)  -pthread cmtxmlattr2w.o cmtxmlcdata2w.o cmtxmlcomment2w.o cmtxmldata.o cmtxmldata2.o cmtxmldata2w.o cmtxmldataimpl2w.o cmtxmldataimplw.o cmtxmldocument2w.o cmtxmlelement2w.o cmtxmlerrhandlerw.o cmtxmlimplutils2.o cmtxmlmsg.o cmtxmlmsg2.o cmtxmlmsg2w.o cmtxmlmsgheader.o cmtxmlmsgheaderimpl.o cmtxmlmsgimpl.o cmtxmlmsgimpl2.o cmtxmlnode2.o cmtxmlnode2w.o cmtxmlnodeimpl2.o cmtxmlpi2w.o cmtxmlutils2.o cmtxsl2.o cmtxsl2w.o cmtxslimpl2w.o cmtxmlmsgutil.o            -Wl,--enable-new-dtags -Wl,-rpath,/mu/mtsdk/corplib/gcc540/lib:/home/sysprog/libraries/build/gcc540-rhel7/libmtcrypto_static:/mu/mtsdk/corplib/gcc540/lib:/mu/sdk/xerces/3.2.3-gcc540-rhel7-64/lib:/mu/sdk/xalan/1.12-gcc540-rhel7-64/lib:/mu/dev/gcc/540/lib64 -L. -L/home/sysprog/libraries/stage/Linux/MU-RHEL70/gcc540/lib -L/mu/mtsdk/corplib/gcc540/lib -L/home/sysprog/libraries/build/gcc540-rhel7/libmtcrypto_static -L/mu/mtsdk/corplib/gcc540/lib -L/mu/sdk/xerces/3.2.3-gcc540-rhel7-64/lib -L/mu/sdk/xalan/1.12-gcc540-rhel7-64/lib -L/mu/dev/gcc/540/lib64 -lmtcrypto -lxerces-c -lxalan-c -lmtmessage
+
+#OBJ: cmtxmlattr2w.o
+#	/mu/bin/g++ -c  -g3 -O2 -fvisibility=hidden -fexceptions -shared -fpermissive -fPIC -pthread -D_REENTRANT -DNDEBUG -D_M_DLL -DMTXML2_LIBRARY_BUILD -I. -I/home/sysprog/libraries/stage/Linux/MU-RHEL70/gcc540/include -I/mu/mtsdk/corplib/gcc540/include -I/mu/mtsdk/corplib/gcc540/include -I/mu/sdk/xerces/3.2.3-gcc540-rhel7-64/include -I/mu/sdk/xalan/1.12-gcc540-rhel7-64/include -o cmtxmlattr2w.o cmtxmlattr2w.cpp
+
+clean:
+	$(RM) $(TARGET)
+	$(RM) *.so 
+
+
+
