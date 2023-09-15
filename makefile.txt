@@ -1,3 +1,16 @@
+
+int main() {
+    // Create the test suite and run the tests
+    CppUnit::TextUi::TestRunner runner;
+    CppUnit::TestFactoryRegistry &registry = CppUnit::TestFactoryRegistry::getRegistry();
+    runner.addTest(registry.makeTest());
+    bool wasSuccessful = runner.run("", false);
+
+    return wasSuccessful ? 0 : 1;
+}
+
+
+
 #---------------------------------------------------------------------------#
 #  Makefile created for build and test CORPLIBS(mtxml)
 #  
