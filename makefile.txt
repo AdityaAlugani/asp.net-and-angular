@@ -1,3 +1,34 @@
+CXX = /mu/bin/g++
+
+SOURCES = mymath.cpp main.cpp test_mymath.cpp
+#OBJECTS = $(SOURCES:.cpp=.o)
+EXECUTABLE = myMathTests
+
+build: main.o mymath.o
+	$(CXX) $(LDFLAGS)  main.o mymath.o -o myMathTests
+
+main.o:
+	$(CXX) -c main.cpp -o main.o
+
+mymath.o:
+	$(CXX) -c mymath.cpp -o mymath.o
+
+
+
+clean:
+	rm -f $(EXECUTABLE) $(OBJECTS)
+
+test: $(EXECUTABLE)
+	./$(EXECUTABLE)
+
+
+
+
+
+
+
+
+
 #include <iostream>
 #include "myMath.h"
 
