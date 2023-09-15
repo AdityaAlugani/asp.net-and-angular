@@ -462,3 +462,67 @@ TEST_LIBS     = cppunit
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Makefile
+
+CXX = g++
+CPPFLAGS = -I/usr/local/include
+CXXFLAGS = -std=c++11
+LDFLAGS = -L/usr/local/lib
+LDLIBS = -lcppunit
+
+SOURCES = myMath.cpp test_myMath.cpp
+OBJECTS = $(SOURCES:.cpp=.o)
+EXECUTABLE = myMathTests
+
+all: $(SOURCES) $(EXECUTABLE)
+
+$(EXECUTABLE): $(OBJECTS)
+    $(CXX) $(LDFLAGS) $(OBJECTS) -o $@ $(LDLIBS)
+
+.cpp.o:
+    $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
+
+clean:
+    rm -f $(EXECUTABLE) $(OBJECTS)
+
+test: $(EXECUTABLE)
+    ./$(EXECUTABLE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
