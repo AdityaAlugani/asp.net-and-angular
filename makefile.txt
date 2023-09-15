@@ -1,3 +1,12 @@
+#include <iostream>
+#include "myMath.h"
+
+int main() {
+    int result = add(2, 3);
+    std::cout << "Result: " << result << std::endl;
+    return 0;
+}
+
 
 int main() {
     // Create the test suite and run the tests
