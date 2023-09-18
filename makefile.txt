@@ -1,3 +1,12 @@
+In file included from test_mymath.cpp:1:
+./cppunit/include/cppunit/extensions/HelperMacros.h:9:10: fatal error: cppunit/TestCaller.h: No such file or directory
+    9 | #include <cppunit/TestCaller.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
 CXX = /mu/bin/g++
 
 SOURCES = mymath.cpp main.cpp test_mymath.cpp
