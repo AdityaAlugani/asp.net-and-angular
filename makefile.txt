@@ -1,3 +1,23 @@
+test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0x57): undefined reference to `CppUnit::SourceLine::SourceLine(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)'
+/usr/bin/ld: test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0xcb): undefined reference to `CppUnit::Message::Message(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+/usr/bin/ld: test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0x1bb): undefined reference to `CppUnit::SourceLine::SourceLine(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)'
+/usr/bin/ld: test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0x22f): undefined reference to `CppUnit::Message::Message(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+/usr/bin/ld: test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0x31f): undefined reference to `CppUnit::SourceLine::SourceLine(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)'
+/usr/bin/ld: test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0x37b): undefined reference to `CppUnit::Message::Message(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+/usr/bin/ld: test_mymath.o: in function `CppUnit::TestCaller<MyMathTest>::TestCaller(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, void (MyMathTest::*)(), MyMathTest*)':
+test_mymath.cpp:(.text._ZN7CppUnit10TestCallerI10MyMathTestEC2ENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEMS1_FvvEPS1_[_ZN7CppUnit10TestCallerI10MyMathTestEC5ENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEMS1_FvvEPS1_]+0x2c): undefined reference to `CppUnit::TestCase::TestCase(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+/usr/bin/ld: test_mymath.o: in function `CppUnit::AutoRegisterSuite<MyMathTest>::AutoRegisterSuite()':
+test_mymath.cpp:(.text._ZN7CppUnit17AutoRegisterSuiteI10MyMathTestEC2Ev[_ZN7CppUnit17AutoRegisterSuiteI10MyMathTestEC5Ev]+0x36): undefined reference to `CppUnit::TestFactoryRegistry::getRegistry(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+/usr/bin/ld: test_mymath.o:(.rodata._ZTVN7CppUnit10TestCallerI10MyMathTestEE[_ZTVN7CppUnit10TestCallerI10MyMathTestEE]+0x40): undefined reference to `CppUnit::TestCase::getName[abi:cxx11]() const'
+/usr/bin/ld: test_mymath.o:(.rodata._ZTVN7CppUnit10TestCallerI10MyMathTestEE[_ZTVN7CppUnit10TestCallerI10MyMathTestEE]+0x48): undefined reference to `CppUnit::Test::findTestPath(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, CppUnit::TestPath&) const'
+/usr/bin/ld: test_mymath.o:(.rodata._ZTVN7CppUnit10TestCallerI10MyMathTestEE[_ZTVN7CppUnit10TestCallerI10MyMathTestEE]+0x58): undefined reference to `CppUnit::Test::findTest(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const'
+/usr/bin/ld: test_mymath.o:(.rodata._ZTVN7CppUnit10TestCallerI10MyMathTestEE[_ZTVN7CppUnit10TestCallerI10MyMathTestEE]+0x60): undefined reference to `CppUnit::Test::resolveTestPath(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const'
+collect2: error: ld returned 1 exit status
+make: *** [Makefile:11: build] Error 1
+##[error]Bash exited with code '2'.
+Finishing: Build with UT execution
+
+
 #include <cppunit/TestCase.h>
 #include <cppunit/TestResult.h>
 #include <cppunit/TestResultCollector.h>
