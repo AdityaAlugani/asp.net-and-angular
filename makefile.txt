@@ -1,9 +1,78 @@
+This ismy make file
+CXX = /mu/bin/g++
+
+SOURCES = mymath.cpp main.cpp test_mymath.cpp
+CPPFLAGS = -I -I./cppunit/include -I./cppunit
+CXXFLAGS = -std=c++11
+LDFLAGS = -L -L./cppunit -L./cppunit/lib
+LDLIBS = -lcppunit
+EXECUTABLE = myMathTests
+
+build: main.o mymath.o test_mymath.o
+	$(CXX) $(LDFLAGS)  main.o mymath.o test_mymath.o -o myMathTests $(LDLIBS)
+
+main.o:
+	$(CXX) -c main.cpp -o main.o
+
+mymath.o:
+	$(CXX) -c mymath.cpp -o mymath.o
+
+test_mymath.o:
+	$(CXX) $(CPPFLAGS) -c test_mymath.cpp -o test_mymath.o
+
+clean:
+	rm -f $(EXECUTABLE) main.o mymath.o test_mymath.o
+
+test: $(EXECUTABLE)
+	./$(EXECUTABLE)
+
+
+this is my test_mymath.cpp
+#include "./cppunit/include/cppunit/extensions/HelperMacros.h"
+#include "mymath.h"
+#include "./cppunit/include/cppunit/TestCase.h"
+#include "./cppunit/include/cppunit/TestSuite.h"
+class MyMathTest:public
+CppUnit::TestFixture{
+
+    CPPUNIT_TEST_SUITE(MyMathTest);
+    CPPUNIT_TEST(testAdd);
+    CPPUNIT_TEST_SUITE_END();
+
+    public:
+        void testAdd(){
+            CPPUNIT_ASSERT(add(2,3)==5);
+            CPPUNIT_ASSERT(add(4,3)==7);
+            CPPUNIT_ASSERT(add(5,3)==8);
+        }
+};
+CPPUNIT_TEST_SUITE_REGISTRATION(MyMathTest);
+int main() {
+    // Create the test suite and run the tests
+    CppUnit::TextUi::TestRunner runner;
+    CppUnit::TestFactoryRegistry &registry = CppUnit::TestFactoryRegistry::getRegistry();
+    runner.addTest(registry.makeTest());
+    bool wasSuccessful = runner.run("", false);
+
+    return wasSuccessful ? 0 : 1;
+}
+
+This is my directory structure
+maindirectory
+cppunit
+ include
+  cppunit
+   include files
+   include folders
+ lib
+  library files
+
+
+Getting this error
 In file included from test_mymath.cpp:1:
 ./cppunit/include/cppunit/extensions/HelperMacros.h:9:10: fatal error: cppunit/TestCaller.h: No such file or directory
     9 | #include <cppunit/TestCaller.h>
       |          ^~~~~~~~~~~~~~~~~~~~~~
-
-
 
 
 
