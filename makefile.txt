@@ -1,3 +1,38 @@
+CXX = /mu/bin/g++
+
+RUNTIMEPATH=./cppunit/lib
+TEST_SHARED_LIBS = -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,$(RUNTIMEPATH)
+SOURCES = mymath.cpp main.cpp test_mymath.cpp
+CPPFLAGS = -I./cppunit/include
+CXXFLAGS = -std=c++11
+LDFLAGS = -L./cppunit/lib -ldl
+LDLIBS = -lcppunit
+EXECUTABLE = myMathTests
+
+build: mymath.o test_mymath.o
+	$(CXX) $(LDFLAGS) $(TEST_SHARED_LIBS) mymath.o test_mymath.o $(LDLIBS) -o myMathTests
+	echo "Compilation completed"
+
+main.o:
+	$(CXX) -c main.cpp -o main.o
+
+mymath.o:
+	$(CXX) -c mymath.cpp -o mymath.o
+
+test_mymath.o:
+	$(CXX) $(CPPFLAGS) -c test_mymath.cpp -o test_mymath.o
+
+clean:
+	rm -f $(EXECUTABLE) main.o mymath.o test_mymath.o
+
+test: build $(EXECUTABLE)
+	./$(EXECUTABLE)
+
+
+
+
+
+
 2023-09-18T05:53:44.6605584Z ##[section]Starting: Build with UT execution
 2023-09-18T05:53:44.6610360Z ==============================================================================
 2023-09-18T05:53:44.6610575Z Task         : Command line
