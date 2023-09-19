@@ -1,3 +1,55 @@
+2023-09-19T05:18:55.1531495Z ##[section]Starting: Build with UT execution
+2023-09-19T05:18:55.1536497Z ==============================================================================
+2023-09-19T05:18:55.1536899Z Task         : Command line
+2023-09-19T05:18:55.1537137Z Description  : Run a command line script using Bash on Linux and macOS and cmd.exe on Windows
+2023-09-19T05:18:55.1537346Z Version      : 2.178.0
+2023-09-19T05:18:55.1537499Z Author       : Microsoft Corporation
+2023-09-19T05:18:55.1537855Z Help         : https://docs.microsoft.com/azure/devops/pipelines/tasks/utility/command-line
+2023-09-19T05:18:55.1538113Z ==============================================================================
+2023-09-19T05:18:55.8244226Z Generating script.
+2023-09-19T05:18:55.8246738Z ========================== Starting Command Output ===========================
+2023-09-19T05:18:55.8258006Z [command]/usr/bin/bash --noprofile --norc /opt/ADO_Agent_0803/_work/_temp/6418643d-4bed-43a5-a401-b8529ba91e16.sh
+2023-09-19T05:18:55.8258957Z Building TESTREPORHEL9 Linux
+2023-09-19T05:18:55.8259684Z /opt/ADO_Agent_0803/_work/4/s
+2023-09-19T05:18:55.8261212Z /opt/ADO_Agent_0803/_work/_temp/6418643d-4bed-43a5-a401-b8529ba91e16.sh: line 3: Agent.ReleaseDirectory: command not found
+2023-09-19T05:18:55.8261905Z 
+2023-09-19T05:18:55.8278085Z rm -f myMathTests main.o mymath.o test_mymath.o
+2023-09-19T05:18:55.8279184Z /mu/bin/g++ -c mymath.cpp -o mymath.o
+2023-09-19T05:18:55.8280333Z /mu/bin/g++ -I./cppunit/include -c test_mymath.cpp -o test_mymath.o
+2023-09-19T05:18:55.9950448Z /mu/bin/g++ mymath.o test_mymath.o -L./cppunit/lib -ldl -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,./cppunit/lib -o myMathTests -lcppunit
+2023-09-19T05:18:56.0661514Z /usr/bin/ld: test_mymath.o: in function `main':
+2023-09-19T05:18:56.0694203Z test_mymath.cpp:(.text+0x49): undefined reference to `CppUnit::TestFactoryRegistry::getRegistry(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+2023-09-19T05:18:56.0762190Z /usr/bin/ld: test_mymath.cpp:(.text+0xd5): undefined reference to `CppUnit::TextTestRunner::run(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, bool, bool, bool)'
+2023-09-19T05:18:56.0769320Z /usr/bin/ld: test_mymath.o: in function `MyMathTest::addTestsToSuite(CppUnit::TestSuiteBuilderContextBase&)':
+2023-09-19T05:18:56.0771364Z test_mymath.cpp:(.text._ZN10MyMathTest15addTestsToSuiteERN7CppUnit27TestSuiteBuilderContextBaseE[_ZN10MyMathTest15addTestsToSuiteERN7CppUnit27TestSuiteBuilderContextBaseE]+0x69): undefined reference to `CppUnit::TestSuiteBuilderContextBase::getTestNameFor(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const'
+2023-09-19T05:18:56.0773038Z /usr/bin/ld: test_mymath.o: in function `MyMathTest::suite()':
+2023-09-19T05:18:56.0774422Z test_mymath.cpp:(.text._ZN10MyMathTest5suiteEv[_ZN10MyMathTest5suiteEv]+0x4f): undefined reference to `CppUnit::TestSuite::TestSuite(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)'
+2023-09-19T05:18:56.0775768Z /usr/bin/ld: test_mymath.o: in function `MyMathTest::testAdd()':
+2023-09-19T05:18:56.0777147Z test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0x57): undefined reference to `CppUnit::SourceLine::SourceLine(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)'
+2023-09-19T05:18:56.0779098Z /usr/bin/ld: test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0xcb): undefined reference to `CppUnit::Message::Message(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+2023-09-19T05:18:56.0780765Z /usr/bin/ld: test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0x1bb): undefined reference to `CppUnit::SourceLine::SourceLine(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)'
+2023-09-19T05:18:56.0802971Z /usr/bin/ld: test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0x22f): undefined reference to `CppUnit::Message::Message(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+2023-09-19T05:18:56.0808539Z /usr/bin/ld: test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0x31f): undefined reference to `CppUnit::SourceLine::SourceLine(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)'
+2023-09-19T05:18:56.0810351Z /usr/bin/ld: test_mymath.cpp:(.text._ZN10MyMathTest7testAddEv[_ZN10MyMathTest7testAddEv]+0x37b): undefined reference to `CppUnit::Message::Message(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+2023-09-19T05:18:56.0812020Z /usr/bin/ld: test_mymath.o: in function `CppUnit::TestCaller<MyMathTest>::TestCaller(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, void (MyMathTest::*)(), MyMathTest*)':
+2023-09-19T05:18:56.0813959Z test_mymath.cpp:(.text._ZN7CppUnit10TestCallerI10MyMathTestEC2ENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEMS1_FvvEPS1_[_ZN7CppUnit10TestCallerI10MyMathTestEC5ENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEMS1_FvvEPS1_]+0x2c): undefined reference to `CppUnit::TestCase::TestCase(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+2023-09-19T05:18:56.0815158Z /usr/bin/ld: test_mymath.o: in function `CppUnit::AutoRegisterSuite<MyMathTest>::AutoRegisterSuite()':
+2023-09-19T05:18:56.0816367Z test_mymath.cpp:(.text._ZN7CppUnit17AutoRegisterSuiteI10MyMathTestEC2Ev[_ZN7CppUnit17AutoRegisterSuiteI10MyMathTestEC5Ev]+0x36): undefined reference to `CppUnit::TestFactoryRegistry::getRegistry(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)'
+2023-09-19T05:18:56.0817647Z /usr/bin/ld: test_mymath.o:(.rodata._ZTVN7CppUnit10TestCallerI10MyMathTestEE[_ZTVN7CppUnit10TestCallerI10MyMathTestEE]+0x40): undefined reference to `CppUnit::TestCase::getName[abi:cxx11]() const'
+2023-09-19T05:18:56.0819095Z /usr/bin/ld: test_mymath.o:(.rodata._ZTVN7CppUnit10TestCallerI10MyMathTestEE[_ZTVN7CppUnit10TestCallerI10MyMathTestEE]+0x48): undefined reference to `CppUnit::Test::findTestPath(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, CppUnit::TestPath&) const'
+2023-09-19T05:18:56.0820522Z /usr/bin/ld: test_mymath.o:(.rodata._ZTVN7CppUnit10TestCallerI10MyMathTestEE[_ZTVN7CppUnit10TestCallerI10MyMathTestEE]+0x58): undefined reference to `CppUnit::Test::findTest(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const'
+2023-09-19T05:18:56.0822026Z /usr/bin/ld: test_mymath.o:(.rodata._ZTVN7CppUnit10TestCallerI10MyMathTestEE[_ZTVN7CppUnit10TestCallerI10MyMathTestEE]+0x60): undefined reference to `CppUnit::Test::resolveTestPath(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const'
+2023-09-19T05:18:56.0822972Z collect2: error: ld returned 1 exit status
+2023-09-19T05:18:56.0823542Z make: *** [Makefile:13: build] Error 1
+2023-09-19T05:18:56.0851442Z ##[error]Bash exited with code '2'.
+2023-09-19T05:18:56.0877838Z ##[section]Finishing: Build with UT execution
+
+
+
+
+
+
+
 CXX = /mu/bin/g++
 
 RUNTIMEPATH=./cppunit/lib
