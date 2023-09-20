@@ -1,3 +1,342 @@
+This is the make file
+#---------------------------------------------------------------------------#
+#  Makefile created for build and test CORPLIBS(MTString)
+#  
+#  Created by: hemahanumaku@micron.com
+#  Date: 24/01/2023
+#---------------------------------------------------------------------------#
+
+#-----------------------------------##
+# Common variables Declration 
+#-----------------------------------##
+
+CXX=/mu/bin/g++
+TARGET_DEFINITIONS = _REENTRANT NDEBUG _M_DLL UNICODE MTSTRING_LIBRARY_BUILD 
+LIBRARY_NAME = MTString
+LIB_NAME = libmtstring
+TEST_TARGET = libmtstring_shared_tester
+LINK = -shared
+LNS = ln -s
+LS	= ls -al
+CP	=	cp -a
+CHMOD = chmod 644
+CPPFLAGS = -g3 -O2 -fvisibility=hidden -fexceptions -shared -fpermissive -fPIC
+TEST_CPPFLAGS	= -g3 -O2 -fexceptions -shared -fpermissive  -fPIC
+TARGET_LDFLAGS = -pthread
+CURR_DIR	=	$(PWD)
+
+
+# Checking for DEV/MUSYNC environment.
+ifeq ($(HOSTNAME), "bolmusyncprod02.micron.com")
+	CORPBUILD	=	/rhel-9-64-mu-dev/mtapps/corp/
+else
+	CORPBUILD	=	/mu/mtapps/corp/
+endif
+
+
+SH_FILE	=	test_common.sh
+
+#source $(CORPBUILD)/$(SH_FILE)
+
+
+#-------------------------------------#
+# Shared libraries mtxml variables
+#-------------------------------------#
+RUNTIME_PATH = /mu/mtsdk/corplib/gcc1131/lib:/home/sysprog/libraries/build/gcc1131-rhel9/libmtcrypto_static:/mu/dev/gcc/1131/lib64 -L.
+LIBDIRS = /home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib /mu/mtsdk/corplib/gcc1131/lib /home/sysprog/libraries/build/gcc1131-rhel9/libmtcrypto_static  /mu/dev/gcc/1131/lib64
+#LIBRARIES = mtcrypto mtmessage
+
+SHARED_LIBS        = -Wl,--enable-new-dtags -Wl,-rpath,$(RUNTIME_PATH) $(addprefix -L,$(LIBDIRS))
+INCS += /mu/mtsdk/corplib/gcc1131/include /opt/ADO_Agent_0803/_work/6/s /opt/ADO_Agent_0803/_work/6/s/include
+
+#---------------------------------
+# Make install
+#--------------------------------
+
+# Dummy STAGE destination PATH.
+#INC_DESTINATION	= /home/corplib/hemahanumaku/stage/Linux/MU-RHEL90/gcc1131/include 
+#LIB_DESTINATION	= /home/corplib/hemahanumaku/stage/Linux/MU-RHEL90/gcc1131/lib
+
+
+# STAGE destination PATH.
+INC_DESTINATION	= /home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/include  
+LIB_DESTINATION	= /home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib
+
+
+#-------------------------------
+# Make stage_promote 
+#--------------------------------
+# Dummy DEV MU destination PATH.
+#MU_INC_DEST	= /home/corplib/hemahanumaku/mu/mtsdk/corplib/gcc1131/include 
+#MU_LIB_DEST	= /home/corplib/hemahanumaku/mu/mtsdk/corplib/gcc1131/lib 
+
+# DEV MU destination PATH.
+MU_INC_DEST	= /mu/mtsdk/corplib/gcc1131/include 
+MU_LIB_DEST	= /mu/mtsdk/corplib/gcc1131/lib
+
+
+#-------------------------------
+# Make stage_promote 
+#--------------------------------
+
+# Dummy Master MU destination PATH.
+#DELTA_MU_INC_DEST	= /rhel-9-64-mu-mstr/mtapps/corp/mu/mtsdk/corplib/gcc1131/include 
+#DELTA_MU_LIB_DEST	= /rhel-9-64-mu-mstr/mtapps/corp/mu/mtsdk/corplib/gcc1131/lib 
+
+
+# Master MU destination PATH.
+DELTA_MU_INC_DEST	= /rhel-9-64-mu-mstr/mtsdk/corplib/gcc1131/include 
+DELTA_MU_LIB_DEST	= /rhel-9-64-mu-mstr/mtsdk/corplib/gcc1131/lib 
+
+
+#----------------------------------------#
+# test libraries variables
+#----------------------------------------#
+
+TEST_RUNTIIME_PATH	= /mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib:/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib:/mu/mtsdk/corplib/gcc1131/lib:/home/sysprog/libraries/build/gcc1131-rhel9/libmtcrypto_static:/mu/mtsdk/corplib/gcc1131/lib:/mu/dev/gcc/1131/lib64
+
+TEST_LIBDIRS	=	/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib \
+					/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib \
+					/mu/mtsdk/corplib/gcc1131/lib \
+					/home/sysprog/libraries/build/gcc1131-rhel9/libmtcrypto_static \
+					/mu/dev/gcc/1131/lib64
+
+TEST_LIBRARIES	=	mtstring cppunit dl
+
+TEST_SHARED_LIBS = -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,$(TEST_RUNTIIME_PATH) $(addprefix -L,$(TEST_LIBDIRS)) $(addprefix -l,$(TEST_LIBRARIES))
+
+TEST_INCS =	/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/include \
+			/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/include \
+			/mu/mtsdk/corplib/gcc1131/include \
+			/opt/ADO_Agent_0803/_work/6/s/include
+
+
+#--------------#
+# Sorce files
+#--------------#
+
+SRC_FILES = src/MTString.c
+#------------------#
+#header files:
+#------------------#
+DEPLOYABLE_HEADERS = include/mtstring.h
+NON_DEPLOYABLE_HEADERS =
+
+#-------------------#
+#Test source files
+#------------------#
+
+TEST_SRCS = src/UnitTests/MTStringUnitTest.cpp
+
+#------------------#
+# Test header files:
+#------------------#
+
+TEST_HDRS = src/MTStringUnitTest.h
+
+TEST_DEFINITIONS = _REENTRANT NDEBUG _M_DLL UNICODE MTSTRING_LIBRARY_BUILD
+
+ifdef WIDE_TEST
+    TEST_DEFINITIONS += MTSTRINGW_TEST
+endif
+
+TEST_LIBS = mtstring cppunit dl
+
+#-----------------------------------#
+# Version tag updation for CORPLIB
+#-----------------------------------#
+
+ifeq ($(strip $(RELEASE)),)
+override LIB_EXT := dev
+else
+	ifneq (,$(findstring _,$(RELEASE)))
+		RELEASE_TEMP := $(RELEASE)
+		ifneq (,$(findstring /,$(RELEASE_TEMP)))
+			RELEASE_TEMP := $(shell echo $(RELEASE_TEMP) | awk -F\/ '{print $$1}')
+		endif
+			override LIB_EXT := $(shell echo $(RELEASE_TEMP) | awk -F\_ '{print $$2}')
+	else
+		override LIB_EXT := $(RELEASE)
+	endif
+endif
+
+override LIB_NAME          := lib$(LIBRARY_NAME)
+override SHARED_LIB        := $(LIB_NAME).so.$(LIB_EXT)
+
+#-----------------------------------------#
+# Make all libs
+#-----------------------------------------#
+.PHONY: all 
+all: build 
+#all: build depends 
+
+#----------------------------------------#
+#Builing shared object (.so) for CORPLIB:
+#----------------------------------------#
+
+
+
+OBJS = $(SRC_FILES:%.c=%.o)
+
+build: $(OBJS)
+	$(RM) *.so.*
+	$(CXX) $(LINK) -o $(SHARED_LIB) $(OBJS) $(TARGET_LDFLAGS) $(SHARED_LIBS)
+	$(RM) libmtstring.so 
+	$(LNS) $(SHARED_LIB) libmtstring.so  
+	@echo "Please use below command test-case"
+	@echo ""
+	@echo "make test"
+
+#---------------------------------#
+#Building object filed (.o) files:
+#---------------------------------#
+
+$(OBJS):%.o :%.c
+	@echo "CORPLIB compilation starts..."
+	$(CXX) -c $(CPPFLAGS) $(addprefix -D,$(TARGET_DEFINITIONS)) $(addprefix -I,$(INCS)) -o $@ $<
+	@echo "COPRPLIB ompilation completed"
+
+#--------------------------------------#
+#Building shared object (.so) for test
+#--------------------------------------#
+TEST_OBJS= $(TEST_SRCS:%.cpp=%.o)
+
+.PHONY: depends 
+depends: $(TEST_OBJS)
+	@echo "Test linking starts ...!!!"
+	$(CXX) -o  $(TEST_TARGET) $(TEST_OBJS) $(TARGET_LDFLAGS) $(TEST_SHARED_LIBS)
+	@echo "Test linking completed"
+	#@echo "Please use make test to run test-case"
+
+#------------------------------------------#
+#Building object filed (.o) files for test
+#------------------------------------------#
+
+$(TEST_OBJS): %.o :%.cpp
+	@echo "test compilation starts "
+	$(CXX) -c $(TEST_CPPFLAGS) $(addprefix -D,$(TEST_DEFINITIONS)) $(addprefix -I,$(TEST_INCS)) -o $@ $<
+	@echo "test compilation completed"
+
+#.SILENT:TEST_SC
+.PHONY:TEST_SC
+TEST_SC:
+		#@echo " TEST_SC --> $(LIB_NAME).so"
+		@echo " TEST_SC --> $(SHARED_LIB)--->$(LIB_EXT)"
+
+#--------------------------------#
+# clean the libraries:
+#--------------------------------#
+
+clean:
+	@echo " clean starts..."
+	$(RM) $(SHARED_LIB)
+	$(RM) $(TEST_TARGET)
+	$(RM) $(TEST_SRCS:%.cpp=%.o) 
+	$(RM) *.so 
+	$(RM) *.o
+
+#-----------------------------#
+# Running test-case
+#----------------------------#
+test: depends
+	@echo "running test case!!!"
+	./$(TEST_TARGET)
+
+# Need to be deleted  from here........
+#-----------------------------------------------------------	
+
+#.PHONY: LIB_TEST
+#LIB_TEST:
+		#@echo  -e "Promote (copy) libraries\nfrom: $(CURR_DIR)\nto: $(LIB_DESTINATION)"
+		#@echo "-$(SHARED_LIB)"
+		#@echo "Change symbolic links"
+		#@echo -e "Promote (copy) headers\nfrom: $(CURR_DIR)\nto: $(INC_DESTINATION)"
+		#@echo "$(DEPYLOYABLE_HEADERS)" 
+
+			#$(CP)	$(SHARED_LIB)	$(LIB_DESTINATION);
+			#$(CP)	$(DEPYLOYABLE_HEADERS)	$(INC_DESTINATION);
+		 	#echo "$(shell ./linkLib.sh)"; 
+			#$(PWD); 
+
+.SILENT:TEST_SC
+TEST_SC:
+		@echo "hostnsme: $(HOSTNAME)"
+		@echo " TEST_SC --> $(LIB_NAME).so"
+		#@echo " TEST_SC --> $(SHARED_LIB)--->$(LIB_EXT)"
+		#$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB) 
+		#$(CORPBUILD) sharedLibName $(SHARED_LIB) 
+		#$(CORPBUILD)/$(SH_FILE) muLibPath $(LIB_DESTINATION) $(MU_LIB_DEST)
+
+		#./test_common.sh muIncPath $(INC_DESTINATION) $(MU_INC_DEST)
+		#./test_common.sh cpHdr_to_mu $(DEPYLOYABLE_HEADERS) $(INC_DESTINATION) $(MU_INC_DEST)
+		#$(CORPBUILD)/$(SH_FILE) linkingLib_stg $(LIB_DESTINATION) $(SHARED_LIB) $(LIB_NAME).so
+		#$(CORPBUILD)/$(SH_FILE) linkingLib_mu $(MU_LIB_DEST) $(SHARED_LIB) $(LIB_NAME).so
+		#./test_common.sh cpHdr_to_stage $(DEPYLOYABLE_HEADERS) $(CURR_DIR) $(INC_DESTINATION)
+		#./test_common.sh cpLib_to_stage $(SHARED_LIB) $(CURR_DIR) $(LIB_DESTINATION)
+		#./test_common.sh cpLib_to_mu $(SHARED_LIB) $(LIB_DESTINATION) $(MU_LIB_DEST)
+		#$(CORPBUILD)/$(SH_FILE) hdrFilePermission_stg $(DEPLOYABLE_HEADERS) $(INC_DESTINATION)
+		#$(CORPBUILD)/$(SH_FILE) hdrFilePermission_stg $(DEPLOYABLE_HEADERS)
+
+#-----------------------------------------------------------
+
+# Delete upto here......
+
+#---------------------------------#
+# Make install:
+# copy header & library to Stage 
+#---------------------------------#
+
+.SILENT: install 
+install: 
+		$(CORPBUILD)/$(SH_FILE) stgLibPath $(LIB_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB) 
+		$(CORPBUILD)/$(SH_FILE) stgIncPath $(INC_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) deployHeaderList $(DEPLOYABLE_HEADERS)
+		$(CORPBUILD)/$(SH_FILE) cpHdr_to_stage $(DEPLOYABLE_HEADERS) $(CURR_DIR) $(INC_DESTINATION) 
+		$(CORPBUILD)/$(SH_FILE) hdrFilePermission_stg $(DEPLOYABLE_HEADERS) $(INC_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) cpLib_to_stage $(SHARED_LIB) $(CURR_DIR) $(LIB_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) linkingLib_stg $(LIB_DESTINATION) $(SHARED_LIB) $(LIB_NAME).so
+
+#---------------------------------#
+# Make stage_promote: 
+# copy header & library to Dev Mu
+# --------------------------------#
+
+.SILENT: stage_promote 
+stage_promote: 
+		$(CORPBUILD)/$(SH_FILE) muLibPath $(LIB_DESTINATION) $(MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB)
+		$(CORPBUILD)/$(SH_FILE) muIncPath $(INC_DESTINATION) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) deployHeaderList $(DEPLOYABLE_HEADERS)
+		$(CORPBUILD)/$(SH_FILE) cpHdr_to_mu $(DEPLOYABLE_HEADERS) $(INC_DESTINATION) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) hdrFilePermission_mu $(DEPLOYABLE_HEADERS) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) cpLib_to_mu $(SHARED_LIB) $(LIB_DESTINATION) $(MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) linkingLib_mu $(MU_LIB_DEST) $(SHARED_LIB) $(LIB_NAME).so
+
+#------------------------------------#
+# Make delta_promote:
+# copy header & library to Master Mu
+# -----------------------------------#
+
+.SILENT: delta_promote 
+delta_promote: 
+		$(CORPBUILD)/$(SH_FILE) muLibPath $(LIB_DESTINATION) $(DELTA_MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB)
+		$(CORPBUILD)/$(SH_FILE) muIncPath $(INC_DESTINATION) $(DELTA_MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) deployHeaderList $(DEPLOYABLE_HEADERS)
+		$(CORPBUILD)/$(SH_FILE) cpHdr_to_mu $(DEPLOYABLE_HEADERS) $(INC_DESTINATION) $(DELTA_MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) hdrFilePermission_mu $(DEPLOYABLE_HEADERS) $(DELTA_MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) cpLib_to_mu $(SHARED_LIB) $(LIB_DESTINATION) $(DELTA_MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) linkingLib_mu $(DELTA_MU_LIB_DEST) $(SHARED_LIB) $(LIB_NAME).so
+
+
+
+
+
+
+
+This is the error
+
 2023-09-20T09:43:19.7640342Z ##[section]Starting: Build with UT execution
 2023-09-20T09:43:19.7645224Z ==============================================================================
 2023-09-20T09:43:19.7645444Z Task         : Command line
