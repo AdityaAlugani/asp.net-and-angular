@@ -1,3 +1,27 @@
+ For compatibility, CMake is ignoring the variable.
+Call Stack (most recent call first):
+  CMakeLists.txt:69 (include)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Error at /usr/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:230 (message):
+  Failed to find XercesC (missing: XercesC_LIBRARY XercesC_INCLUDE_DIR
+  XercesC_VERSION) (Required is at least version "3.1")
+Call Stack (most recent call first):
+  /usr/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:594 (_FPHSA_FAILURE_MESSAGE)
+  /usr/share/cmake/Modules/FindXercesC.cmake:110 (FIND_PACKAGE_HANDLE_STANDARD_ARGS)
+  cmake/XalanXerces.cmake:22 (find_package)
+  CMakeLists.txt:69 (include)
+
+
+
+
+
+
+
+
+
+
+
 This is the make file
 #---------------------------------------------------------------------------#
 #  Makefile created for build and test CORPLIBS(MTString)
