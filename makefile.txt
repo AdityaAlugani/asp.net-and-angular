@@ -1,3 +1,14 @@
+cmake -DXercesC_LIBRARY=/path/to/xercesc/library -DXercesC_INCLUDE_DIR=/path/to/xercesc/include -DXercesC_VERSION=3.1 /path/to/source
+
+
+
+
+
+
+
+
+
+
  For compatibility, CMake is ignoring the variable.
 Call Stack (most recent call first):
   CMakeLists.txt:69 (include)
