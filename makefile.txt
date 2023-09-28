@@ -1,3 +1,32 @@
+/home/aalugani/xalan_c-1.12/src/xalanc/Include/XalanList.hpp: In instantiation of ‘xalanc_1_12::XalanListIteratorBase<XalanListTraits, Node> xalanc_1_12::XalanListIteratorBase<XalanListTraits, Node>::operator--() [with XalanListTraits = xalanc_1_12::XalanListConstIteratorTraits<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>; Node = xalanc_1_12::XalanList<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>::Node]’:
+/usr/include/c++/11/bits/stl_iterator.h:244:10:   required from ‘std::reverse_iterator<_Iterator>::reference std::reverse_iterator<_Iterator>::operator*() const [with _Iterator = xalanc_1_12::XalanListIteratorBase<xalanc_1_12::XalanListConstIteratorTraits<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>, xalanc_1_12::XalanList<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>::Node>; std::reverse_iterator<_Iterator>::reference = xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>* const&]’
+/home/aalugani/xalan_c-1.12/src/xalanc/PlatformSupport/ReusableArenaAllocator.hpp:266:18:   required from ‘bool xalanc_1_12::ReusableArenaAllocator<ObjectType>::ownsObject(const ObjectType*) const [with ObjectType = xalanc_1_12::XTokenStringAdapter]’
+/home/aalugani/xalan_c-1.12/src/xalanc/XPath/XTokenStringAdapterAllocator.hpp:82:38:   required from here
+/home/aalugani/xalan_c-1.12/src/xalanc/Include/XalanList.hpp:101:17: warning: implicitly-declared ‘constexpr xalanc_1_12::XalanListIteratorBase<xalanc_1_12::XalanListConstIteratorTraits<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>, xalanc_1_12::XalanList<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>::Node>::XalanListIteratorBase(const xalanc_1_12::XalanListIteratorBase<xalanc_1_12::XalanListConstIteratorTraits<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>, xalanc_1_12::XalanList<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>::Node>&)’ is deprecated [-Wdeprecated-copy]
+  101 |         return *this;
+      |                 ^~~~
+/home/aalugani/xalan_c-1.12/src/xalanc/Include/XalanList.hpp:125:35: note: because ‘xalanc_1_12::XalanListIteratorBase<xalanc_1_12::XalanListConstIteratorTraits<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>, xalanc_1_12::XalanList<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>::Node>’ has user-provided ‘const xalanc_1_12::XalanListIteratorBase<XalanListTraits, Node>& xalanc_1_12::XalanListIteratorBase<XalanListTraits, Node>::operator=(const xalanc_1_12::XalanListIteratorBase<XalanListTraits, Node>&) [with XalanListTraits = xalanc_1_12::XalanListConstIteratorTraits<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>; Node = xalanc_1_12::XalanList<xalanc_1_12::ReusableArenaBlock<xalanc_1_12::XTokenStringAdapter, short unsigned int>*>::Node]’
+  125 |     const XalanListIteratorBase & operator=(const XalanListIteratorBase& theRhs)
+      |                                   ^~~~~~~~
+[ 90%] Linking CXX executable XalanTransformerCallback
+/usr/bin/ld: cannot open output file XalanTransformerCallback: Is a directory
+collect2: error: ld returned 1 exit status
+make[2]: *** [samples/CMakeFiles/XalanTransformerCallback.dir/build.make:100: samples/XalanTransformerCallback] Error 1
+make[1]: *** [CMakeFiles/Makefile2:519: samples/CMakeFiles/XalanTransformerCallback.dir/all] Error 2
+make: *** [Makefile:146: all] Error 2
+
+
+
+
+
+
+
+
+
+
+
+
+
 [aalugani@bol9dev01 s]$ cd ~
 [aalugani@bol9dev01 ~]$ ll
 total 9908
