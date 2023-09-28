@@ -1,3 +1,12 @@
+cmake -DXercesC_LIBRARY=/home/aalugani/xerces-c-3.2.4/src/.libs/libxerces-c-3.2.so -DXercesC_INCLUDE_DIR=/home/aalugani/xerces-c-3.2.4/src  ./
+
+
+
+
+
+
+
+
 Linking CXX executable TestXSLT
 [ 90%] Built target TestXSLT
 [ 90%] Building CXX object src/xalanc/TestXPath/CMakeFiles/TestXPath.dir/NodeNameTreeWalker.cpp.o
