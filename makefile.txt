@@ -1,3 +1,225 @@
+[aalugani@bol9dev01 s]$ cd ~
+[aalugani@bol9dev01 ~]$ ll
+total 9908
+drwxr-xr-x  2 aalugani aalugani    4096 Sep 20 23:11 corplibtemp
+drwxr-xr-x  2 aalugani aalugani    4096 Sep 26 00:48 xalan-c
+-rwxrwxrwx  1 aalugani aalugani 1554940 Sep 26 23:09 Xalan-C_1_10_0-src.tar.gz
+drwxr-xr-x 10 aalugani aalugani    4096 Sep 27 05:09 xalan_c-1.12
+-rwxrwxr-x  1 aalugani aalugani 1130924 Sep 26 21:48 xalan_c-1.12.tar.gz
+drwxrwxr-x  2 aalugani aalugani    4096 Sep 26 00:48 xalanrpa
+drwxr-xr-x 11 aalugani aalugani    4096 Sep 26 22:49 xerces-c-3.2.4
+-rwxrwxrwx  1 aalugani aalugani 7374651 Sep 26 22:47 xerces-c-3.2.4.tar.gz
+drwxr-xr-x  4 aalugani aalugani    4096 Oct 21  2005 xml-xalan
+[aalugani@bol9dev01 ~]$ ^C
+[aalugani@bol9dev01 ~]$ cd xalan_c-1.12
+[aalugani@bol9dev01 xalan_c-1.12]$ ll
+total 112
+drwxr-xr-x  3 aalugani aalugani  4096 Sep 27 04:21 build
+drwxr-xr-x  2 aalugani aalugani  4096 Sep 26 21:51 cmake
+-rw-r--r--  1 aalugani aalugani 24128 Sep 27 05:09 CMakeCache.txt
+drwxr-xr-x  4 aalugani aalugani  4096 Sep 27 04:41 CMakeFiles
+-rw-r--r--  1 aalugani aalugani  4366 Jun  7  2020 CMakeLists.txt
+-rw-r--r--  1 aalugani aalugani   129 Jun  7  2020 CREDITS
+drwxr-xr-x  4 aalugani aalugani  4096 Sep 26 21:51 docs
+-rw-r--r--  1 aalugani aalugani  8977 Jun  7  2020 KEYS
+-rw-r--r--  1 aalugani aalugani 11359 Jun  7  2020 LICENSE
+-rwxr-xr-x  1 aalugani aalugani   804 Jun  7  2020 NOTICE
+-rw-r--r--  1 aalugani aalugani  1014 Jun  7  2020 readme.html
+-rw-r--r--  1 aalugani aalugani   689 Jun  7  2020 README.md
+drwxr-xr-x 20 aalugani aalugani  4096 Sep 26 21:51 samples
+drwxr-xr-x  2 aalugani aalugani  4096 Sep 26 21:51 scripts
+drwxr-xr-x  3 aalugani aalugani  4096 Sep 26 21:51 src
+drwxr-xr-x 15 aalugani aalugani  4096 Sep 26 21:51 Tests
+-rw-r--r--  1 aalugani aalugani   212 Jun  7  2020 xalan-c.pc.in
+[aalugani@bol9dev01 xalan_c-1.12]$ ccmake
+Usage
+
+  ccmake <path-to-source>
+  ccmake <path-to-existing-build>
+
+Specify a source directory to (re-)generate a build system for it in the
+current working directory.  Specify an existing build directory to
+re-generate its build system.
+
+Run 'ccmake --help' for more information.
+
+[aalugani@bol9dev01 xalan_c-1.12]$ cmake
+Usage
+
+  cmake [options] <path-to-source>
+  cmake [options] <path-to-existing-build>
+  cmake [options] -S <path-to-source> -B <path-to-build>
+
+Specify a source directory to (re-)generate a build system for it in the
+current working directory.  Specify an existing build directory to
+re-generate its build system.
+
+Run 'cmake --help' for more information.
+
+[aalugani@bol9dev01 xalan_c-1.12]$ cmake ./
+-- Configuring Apache Xalan-C++ version 1.12.0
+-- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE)
+-- Found the following ICU libraries:
+--   uc (required)
+--   data (required)
+--   i18n (required)
+-- Failed to find all ICU components (missing: ICU_INCLUDE_DIR ICU_LIBRARY)
+CMake Warning (dev) at cmake/XalanXerces.cmake:22 (find_package):
+  Policy CMP0074 is not set: find_package uses <PackageName>_ROOT variables.
+  Run "cmake --help-policy CMP0074" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+
+  CMake variable XercesC_ROOT is set to:
+
+    /home/aalugani/xerces-c-3.2.4/
+
+  For compatibility, CMake is ignoring the variable.
+Call Stack (most recent call first):
+  CMakeLists.txt:69 (include)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Error at cmake/XalanMsgLoaderSelection.cmake:50 (message):
+  icu message loader unavailable
+Call Stack (most recent call first):
+  CMakeLists.txt:72 (include)
+
+
+-- Configuring incomplete, errors occurred!
+See also "/home/aalugani/xalan_c-1.12/CMakeFiles/CMakeOutput.log".
+See also "/home/aalugani/xalan_c-1.12/CMakeFiles/CMakeError.log".
+[aalugani@bol9dev01 xalan_c-1.12]$ ^C
+[aalugani@bol9dev01 xalan_c-1.12]$ cmake -DXercesC_LIBRARY=/home/aalugani/xerces-c-3.2.4/src -DXercesC_INCLUDE_DIR=/home/aalugani/xerces-c-3.2.4/src  ./
+-- Configuring Apache Xalan-C++ version 1.12.0
+-- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE)
+-- Found the following ICU libraries:
+--   uc (required)
+--   data (required)
+--   i18n (required)
+-- Failed to find all ICU components (missing: ICU_INCLUDE_DIR ICU_LIBRARY)
+CMake Warning (dev) at cmake/XalanXerces.cmake:22 (find_package):
+  Policy CMP0074 is not set: find_package uses <PackageName>_ROOT variables.
+  Run "cmake --help-policy CMP0074" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+
+  CMake variable XercesC_ROOT is set to:
+
+    /home/aalugani/xerces-c-3.2.4/
+
+  For compatibility, CMake is ignoring the variable.
+Call Stack (most recent call first):
+  CMakeLists.txt:69 (include)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Error at cmake/XalanMsgLoaderSelection.cmake:50 (message):
+  icu message loader unavailable
+Call Stack (most recent call first):
+  CMakeLists.txt:72 (include)
+
+
+-- Configuring incomplete, errors occurred!
+See also "/home/aalugani/xalan_c-1.12/CMakeFiles/CMakeOutput.log".
+See also "/home/aalugani/xalan_c-1.12/CMakeFiles/CMakeError.log".
+[aalugani@bol9dev01 xalan_c-1.12]$ cmake -DXercesC_LIBRARY=/home/aalugani/xerces-c-3.2.4/src -Dmessage-loader=inmemory  -DXercesC_INCLUDE_DIR=/home/aalugani/xerces-c-3.2.4/src  ./
+-- Configuring Apache Xalan-C++ version 1.12.0
+-- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE)
+-- Found the following ICU libraries:
+--   uc (required)
+--   data (required)
+--   i18n (required)
+-- Failed to find all ICU components (missing: ICU_INCLUDE_DIR ICU_LIBRARY)
+CMake Warning (dev) at cmake/XalanXerces.cmake:22 (find_package):
+  Policy CMP0074 is not set: find_package uses <PackageName>_ROOT variables.
+  Run "cmake --help-policy CMP0074" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+
+  CMake variable XercesC_ROOT is set to:
+
+    /home/aalugani/xerces-c-3.2.4/
+
+  For compatibility, CMake is ignoring the variable.
+Call Stack (most recent call first):
+  CMakeLists.txt:69 (include)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- Performing Test CXX_matching-delete-operator
+-- Performing Test CXX_matching-delete-operator - Success
+-- Performing Test HAVE_PATH_MAX
+-- Performing Test HAVE_PATH_MAX - Success
+--
+-- Xalan-C++ configuration summary
+-- -------------------------------
+--
+--   Version:                     1.12.0
+--   Library major version:       112
+--   Library minor version:       0
+--
+--   Installation directory:      /opt/Xalan-c
+--   C compiler:                  /usr/bin/cc
+--   C++ compiler:                /usr/bin/c++
+--
+--   Build shared libraries:      ON
+--   Thread implementation:       standard
+--   Transcoder:                  default
+--   Message Loader:              inmemory
+--   Message Loader Locale:       en_US
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/aalugani/xalan_c-1.12
+[aalugani@bol9dev01 xalan_c-1.12]$ ll
+total 156
+drwxr-xr-x  3 aalugani aalugani  4096 Sep 27 04:21 build
+drwxr-xr-x  2 aalugani aalugani  4096 Sep 26 21:51 cmake
+-rw-r--r--  1 aalugani aalugani 24662 Sep 28 01:20 CMakeCache.txt
+drwxr-xr-x  4 aalugani aalugani  4096 Sep 28 01:20 CMakeFiles
+-rw-r--r--  1 aalugani aalugani  2657 Sep 28 01:20 cmake_install.cmake
+-rw-r--r--  1 aalugani aalugani  4366 Jun  7  2020 CMakeLists.txt
+-rw-r--r--  1 aalugani aalugani   129 Jun  7  2020 CREDITS
+-rw-r--r--  1 aalugani aalugani   519 Sep 28 01:20 CTestTestfile.cmake
+drwxr-xr-x  4 aalugani aalugani  4096 Sep 26 21:51 docs
+-rw-r--r--  1 aalugani aalugani  8977 Jun  7  2020 KEYS
+-rw-r--r--  1 aalugani aalugani 11359 Jun  7  2020 LICENSE
+-rw-r--r--  1 aalugani aalugani 20934 Sep 28 01:20 Makefile
+-rwxr-xr-x  1 aalugani aalugani   804 Jun  7  2020 NOTICE
+-rw-r--r--  1 aalugani aalugani  1014 Jun  7  2020 readme.html
+-rw-r--r--  1 aalugani aalugani   689 Jun  7  2020 README.md
+drwxr-xr-x 21 aalugani aalugani  4096 Sep 28 01:20 samples
+drwxr-xr-x  2 aalugani aalugani  4096 Sep 26 21:51 scripts
+drwxr-xr-x  3 aalugani aalugani  4096 Sep 26 21:51 src
+drwxr-xr-x 16 aalugani aalugani  4096 Sep 28 01:20 Tests
+-rw-r--r--  1 aalugani aalugani   232 Sep 28 01:20 xalan-c.pc
+-rw-r--r--  1 aalugani aalugani   212 Jun  7  2020 xalan-c.pc.in
+[aalugani@bol9dev01 xalan_c-1.12]$ make
+[  0%] Building CXX object src/xalanc/Utils/MsgCreator/CMakeFiles/MsgCreator.dir/ICUResHandler.cpp.o
+[  0%] Building CXX object src/xalanc/Utils/MsgCreator/CMakeFiles/MsgCreator.dir/InMemHandler.cpp.o
+[  0%] Building CXX object src/xalanc/Utils/MsgCreator/CMakeFiles/MsgCreator.dir/MsgCreator.cpp.o
+/home/aalugani/xalan_c-1.12/src/xalanc/Utils/MsgCreator/MsgCreator.cpp:122:1: warning: no previous declaration for ‘bool getArgs(int, char**, CmdLineParams&, const char**)’ [-Wmissing-declarations]
+  122 | getArgs(
+      | ^~~~~~~
+[  1%] Building CXX object src/xalanc/Utils/MsgCreator/CMakeFiles/MsgCreator.dir/MsgFileOutputStream.cpp.o
+/home/aalugani/xalan_c-1.12/src/xalanc/Utils/MsgCreator/MsgFileOutputStream.cpp:116:1: warning: no previous declaration for ‘void xalanc_1_12::FormatMessageLocal(const char*, const char*, int, char*)’ [-Wmissing-declarations]
+  116 | FormatMessageLocal(
+      | ^~~~~~~~~~~~~~~~~~
+[  1%] Building CXX object src/xalanc/Utils/MsgCreator/CMakeFiles/MsgCreator.dir/NLSHandler.cpp.o
+[  1%] Building CXX object src/xalanc/Utils/MsgCreator/CMakeFiles/MsgCreator.dir/SAX2Handler.cpp.o
+[  1%] Linking CXX executable MsgCreator
+/usr/bin/ld: error: /home/aalugani/xerces-c-3.2.4/src: read: Is a directory
+collect2: error: ld returned 1 exit status
+make[2]: *** [src/xalanc/Utils/MsgCreator/CMakeFiles/MsgCreator.dir/build.make:178: src/xalanc/Utils/MsgCreator/MsgCreator] Error 1
+make[1]: *** [CMakeFiles/Makefile2:281: src/xalanc/Utils/MsgCreator/CMakeFiles/MsgCreator.dir/all] Error 2
+make: *** [Makefile:146: all] Error 2
+[aalugani@bol9dev01 xalan_c-1.12]$
+
+
+
+
+
+
+
+
+
+
+
+
 cmake -DXercesC_LIBRARY=/path/to/xercesc/library -DXercesC_INCLUDE_DIR=/path/to/xercesc/include -DXercesC_VERSION=3.1 /path/to/source
 
 
