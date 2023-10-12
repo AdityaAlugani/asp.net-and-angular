@@ -1,3 +1,5972 @@
+//==============================================================================
+//              <Standard Micron Copyright Information>
+//
+// Copyright 1999 Micron Technology, Inc. All Rights Reserved.
+// Unpublished all rights reserved under the copyright laws of
+// the United States. USE OF A COPYRIGHT NOTICE IS PRECAUTIONARY
+// ONLY AND DOES NOT IMPLY PUBLICATION OR DISCLOSURE.
+//
+// THIS SOFTWARE CONTAINS CONFIDENTIAL INFORMATION AND
+// TRADE SECRETS OF MICRON TECHNOLOGY, INC. USE, DISCLOSURE,
+// OR REPRODUCTION IS PROHIBITED WITHOUT THE PRIOR EXPRESS
+// WRITTEN PERMISSION OF MICRON TECHNOLOGY, INC.
+//==============================================================================
+
+//==============================================================================
+//
+// CMTMailw.cpp                                               1-MAY-1998
+//
+// Purpose: Class sends an email message
+//
+//==============================================================================
+static char gRevisionString[] = "Version 1.0.0.37";
+
+#include "cmtmailw.h"
+#include "mtmailpage.h"
+
+#include <string>
+
+extern "C"
+{
+#if defined (_WIN32)
+
+#   include <windows.h>
+#   include <sys\timeb.h>
+#   include <process.h>
+
+#pragma warning  (disable : 4267 4244 4996 )
+#endif
+
+#if defined (__VMS)
+#   include <socket.h>
+#   include <in.h>
+#   include <netdb.h>
+#   include <errno.h>
+#   include <unixlib.h>
+#   include <unistd.h>
+#   include <unixio.h>
+#   include <descrip.h>
+#   include <jpidef.h>
+#   include <lib$routines.h>
+#   include <reentrant_netdb.h>
+#endif
+
+#if defined (unix) || defined(__xlC__)
+#   include <sys/socket.h>
+#   include <netdb.h>
+#   include <unistd.h>
+#   include <errno.h>
+#   include <sys/timeb.h>
+#   include <strings.h>
+#   include <wchar.h>
+#   include <arpa/inet.h>
+//#   include <reentrant_netdb.h>
+#endif
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <locale.h>
+#include <string.h>
+#include <time.h>
+}
+
+
+#if defined (__VMS)
+#   define WSAGetLastError(p) errno
+#   define WSASetLastError(p)
+#elif defined (unix) || defined(__xlC__)
+#   define WSAGetLastError() errno
+#   define WSASetLastError(p)
+#   define WSAETIMEDOUT ETIMEDOUT
+#endif
+
+
+USING_NAMESPACE(std)
+USING_NAMESPACE(mti)
+
+// CMTMailImp Implementation class. This class gets called by the wrapper
+// class CMTMail which is what applications will call.
+//
+// The wrapper class member functions just call the the coresponding functions
+// in the implementation class using the pointer to the implementation class.
+// This allows for changes to be made to the implementation class without
+// effecting the wrapper class that's exported to a DLL or the VMS RTL. If
+// a change were to be made to the exposed class all apps using the class
+// would require a re-compile to work correctly.
+
+BEGIN_NAMESPACE(mti)
+
+class CMTMailImp
+{
+public:
+
+    CMTMailImp ();
+    ~CMTMailImp ();
+    CMTMailImp (const CMTMailImp &MailImp);
+    CMTMailImp &operator= (const CMTMailImp &MailImp);
+
+    void SetFrom (const wchar_t *InAddress);
+    void SetFrom (const char *InAddress, const char *InLocale = "");
+    const wchar_t* GetFrom();
+    const string& GetFromString();
+
+    void SetTo   (const wchar_t *InAddress);
+    void SetTo   (const char *InAddress, const char *InLocale = "");
+    void AppendTo   (const wchar_t *InAddress);
+    void AppendTo   (const char *InAddress, const char *InLocale = "");
+    const wchar_t* GetTo();
+    const string& GetToString();
+
+    void SetCC   (const wchar_t *InAddress);
+    void SetCC   (const char *InAddress, const char *InLocale = "");
+    void AppendCC   (const wchar_t *InAddress);
+    void AppendCC   (const char *InAddress, const char *InLocale = "");
+    const wchar_t* GetCC();
+    const string& GetCCString ();
+
+    void SetBCC  (const wchar_t *InAddress);
+    void SetBCC  (const char *InAddress, const char *InLocale = "");
+    void AppendBCC   (const wchar_t *InAddress);
+    void AppendBCC   (const char *InAddress, const char *InLocale = "");
+    const wchar_t* GetBCC();
+    const string& GetBCCString();
+
+    void SetSubject (const wchar_t *InSubject);
+    void SetSubject (const char *InSubject, const char *InLocale = "");
+    const wchar_t* GetSubject();
+    const string& GetSubjectString();
+
+    void SetText    (const wchar_t *InText);
+    void SetText    (const char *InText, const char *InLocale = "");
+    void AppendText (const wchar_t *InText);
+    void AppendText (const char *InText, const char *InLocale = "");
+    const wchar_t* GetText();
+    const string& GetTextString();
+
+    const long GetTextLength (void);
+
+
+    void SetTextFile (const wchar_t *InFilename);
+    void SetTextFile (const char *InFilename, const char *InLocale = "");
+    const wchar_t* GetTextFile();
+    const string& GetTextFileString();
+
+    void SetAttachment  (const wchar_t *InFilename);
+    void SetAttachment  (const char *InFilename, const char *InLocale = "");
+    const wchar_t* GetAttachment();
+    const string& GetAttachmentString();
+
+
+    void SetCalendar  (const wchar_t *InCalendar);
+    void SetCalendar  (const char *InCalendar, const char *InLocale = "");
+
+    void SetCalendar (const wchar_t *InMethod,
+                      const wchar_t *InUID,
+                      const wchar_t *InStartTime,
+                      const long    InDuration,
+                      const long    InReminderMinutes,
+                      const wchar_t *InLocation,
+                      const long    InRSVP,
+                      const wchar_t *InFreq,
+                      const long     InCount,
+                      const long     InInterval,
+                      const wchar_t  *InByDay);
+
+
+    const wchar_t* GetCalendar();
+    const string& GetCalendarString();
+
+    void BuildiCalendar();
+
+
+
+    void Reset (void);
+
+    long Send (const wchar_t *InTo = L"",
+               const wchar_t *InFrom = L"",
+               const wchar_t *InText = L"",
+               const wchar_t *InSubject = L"",
+               const wchar_t *InCC = L"",
+               const wchar_t *InBCC = L"",
+               const wchar_t *InAttachment = L"",
+               const wchar_t *InTextFile = L"");
+
+    long Send (const char *InTo,
+               const char *InFrom = "",
+               const char *InText = "",
+               const char *InSubject = "",
+               const char *InCC = "",
+               const char *InBCC = "",
+               const char *InAttachment = "",
+               const char *InTextFile = "",
+               const char *InLocale = "");
+
+    long GetStatusCode (void) const;
+    const wchar_t* GetStatusText (void);
+    const string& GetStatusTextString(void);
+    
+    void SetTextHTML (const long InHTML);
+    const long GetTextHTML();
+
+    void SetServer (const wchar_t *InHostName);
+    void SetServer (const char *InHostName, const char *InLocale = "");
+
+    void SetConfidential (const long InConfidential);
+    const long GetConfidential();
+
+    void SetPrivate (const long InPrivate);
+    const long GetPrivate();
+
+    void SetCharset (const wchar_t *InCharset);
+    void SetCharset (const char *InCharset);
+    const wchar_t* GetCharset();
+
+    long Connect (const wchar_t *InServer);
+    long Disconnect();
+
+
+    const string& GetApplicationNameString();
+    const string& GetClarifyQueueString ();
+
+private:
+    
+    long ConnectSmtp (const char *pzSmtpServer);
+    long ConnectSmtp (const struct in_addr &IPAddr);
+    long SendSmtp ();
+    long CloseSmtp (void);
+    long RecvTcp (char        *pzBuffer,
+                  const long  lBufferSize);
+    long SendTcp (const char *sBuffer);
+    void SendSubjectHeader();
+
+    long SendFrom ();
+    long SendData (const long bText8Bit);
+    long SendTextLine ( const char *sLine );
+    long SendText ();
+    long SendTextFile ();
+    long SendAttachment ();
+    long SendCalendar ();
+    long SendRcpt ( const wchar_t *pwAddr );
+    long SendEOM (void);
+
+    long Base64 ( FILE *fpFile );
+    long Base64Line ( char *pcBase64, 
+                      const unsigned char *pcLine, 
+                      const long lLineLen);
+    long Base64 ( const char *pcText );
+    char Base64Encode (const char inch);
+    
+    long SendRcptList (const wchar_t *pwAddrList);
+    long SendRcptListHeader ( const char *pzLabel,
+                              const wchar_t *pwRcptList);
+    void SendContentType(const wchar_t *pwValue);
+    void SendContentDisposition(const wchar_t *pwValue);
+
+    void SetStatusText (const wchar_t *InStatusText);
+    void SetStatusText (const char *InStatusText);    
+    
+    void hrSet (wchar_t **Ptr, const wchar_t *newVal);
+    void hrSet (wchar_t **Ptr, const char *newVal, const char *InLocale = "");
+    void hrAppend (wchar_t **Ptr, const wchar_t *newVal);
+    void hrAppend (wchar_t **Ptr, const char *newVal, const char *InLocale = "");
+    void hrRTrim (wchar_t *Ptr);
+    void hrParseList (wchar_t **List, const wchar_t *newVal);
+    void hrParseList (wchar_t **List, const char *newVal, const char *InLocale = "");
+    long hrParseDistList (wchar_t **List, const wchar_t *wDistName);
+    long hrIs8Bit(const wchar_t *pwText, const wchar_t *pwTextFile);
+
+    long GetSmtpServers(char *pzSmtpServerList, 
+                        const long lSmtpServerListSize, 
+                        const wchar_t *pwSmtpServer);
+	long GetHostName();
+
+    long GetHostbyname (struct in_addr  *IPAddrs,
+                        const long lIPAddrsSize,
+                        long &lIPAddrsNum,
+                        const char *pzHostName);
+
+
+    wchar_t     *mFrom;
+    wchar_t     *mToList;
+    wchar_t     *mCCList;
+    wchar_t     *mBCCList;
+    wchar_t     *mSubject;
+    wchar_t     *mText;
+    wchar_t     *mTextFile;
+    wchar_t     *mAttachment;
+    
+    long        mHTML;
+    long        mConfidential;
+    long        mPrivate;
+    wchar_t     *mSmtpServer;
+    wchar_t     *mInvalidRecipients;
+    
+    int         mStatusCode;
+    wchar_t     *mStatusText;
+    string      *mTempString;
+    
+    char        mLocalHostName[64];
+    char        mLocalDomainName[64];
+    char        mDefaultDomainName[64];
+    char        mBoundaryStr[100];
+    char        mUsername[51];
+    char        mCharset[20];
+
+    long        mSock;
+    long        mbMultiPart;
+
+    char        mServerIP[20];
+
+
+    wchar_t     *mCalendar;
+    wchar_t     *mCalendarMethod;
+    wchar_t     *mCalendarUID;
+    wchar_t     *mCalendarStartTime;
+    long        mCalendarDuration;
+    long        mCalendarReminderMinutes;
+    wchar_t     *mCalendarLocation;
+    long        mCalendarRSVP;
+    wchar_t     *mCalendarFreq;
+    long        mCalendarCount;
+    long        mCalendarInterval;
+    wchar_t     *mCalendarByDay;
+};
+
+CMTMailImp::CMTMailImp ()
+/***************************************************************************
+**
+** CMTMailImp::CMTMailImp
+**
+** Purpose: Class constructor
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    mFrom = NULL;
+    mToList = NULL;
+    mCCList = NULL;
+    mBCCList = NULL;
+    mSubject = NULL;
+    mText = NULL;
+    mTextFile = NULL;
+    mAttachment = NULL;
+    mStatusText = NULL;
+    mTempString = NULL;
+    mSmtpServer = NULL;
+    mInvalidRecipients = NULL;
+    mTempString = NULL;
+
+    mCalendar = NULL;
+    mCalendarMethod = NULL;
+    mCalendarUID = NULL;
+    mCalendarStartTime = NULL;
+    mCalendarLocation = NULL;
+    mCalendarDuration = 0;
+    mCalendarReminderMinutes = 0;
+    mCalendarRSVP = false;
+    mCalendarFreq = NULL;
+    mCalendarCount = 0;
+    mCalendarInterval = 0;
+    mCalendarByDay = 0;
+
+
+    
+
+
+
+
+    mHTML = false;
+    mConfidential = false;
+    mPrivate = false;
+
+    mBoundaryStr[0] = '\0';
+    mbMultiPart = false;
+    
+    mDefaultDomainName[0] = '\0';
+    mLocalDomainName[0] = '\0';
+    mUsername[0] = '\0';
+    mLocalHostName[0] = '\0';
+    mServerIP[0] = '\0';
+
+    mSock = 0;
+    mStatusCode = 0;
+    SetStatusText (L"Not Connected (Initial state)");
+    mbMultiPart = false;
+    mHTML = false;
+    mConfidential = false;
+    mPrivate = false;
+
+    hrSet (&mFrom, L"");
+    hrSet (&mToList, L"");
+    hrSet (&mCCList, L"");
+    hrSet (&mBCCList, L"");
+    hrSet (&mSubject, L"");
+    hrSet (&mText, L"");
+    hrSet (&mTextFile, L"");
+    hrSet (&mAttachment, L"");
+    hrSet (&mStatusText, L"");
+    strcpy (mCharset, "utf-8");
+
+    hrSet (&mCalendar, L"");
+    hrSet (&mCalendarMethod, L"");
+    hrSet (&mCalendarUID, L"");
+    hrSet (&mCalendarStartTime, L"");
+    hrSet (&mCalendarLocation, L"");
+    mCalendarDuration = 0;
+    mCalendarReminderMinutes = 0;
+    mCalendarRSVP = false;
+    hrSet (&mCalendarFreq, L"");
+    mCalendarCount = 0;
+    mCalendarInterval = 0;
+    hrSet (&mCalendarByDay, L"");
+
+
+
+#if defined(_WIN32)
+    WSADATA     WsaData;
+    if ( WSAStartup (MAKEWORD(1,1),&WsaData) != 0 ) 
+    {    
+        char    zBuffer[255];
+        mStatusCode = WSAGetLastError();
+        sprintf (zBuffer, "Error calling 'WSAStartup'  <%d>", mStatusCode);
+        SetStatusText (zBuffer);
+    }
+#endif
+
+#if defined (_WIN32)
+
+    unsigned long    lUsernameSize = sizeof(mUsername);
+    GetUserNameA (mUsername, &lUsernameSize);
+
+#elif defined(__VMS) || defined (unix) || defined(__xlC__)
+
+    cuserid (mUsername);
+    
+#endif
+
+    // lowercase the name
+    for ( long i = 0; i < (long)strlen(mUsername); i++ )
+    {
+        if ( mUsername[i] >= 'A' && mUsername[i] <= 'Z' )	mUsername[i] += 32;
+    }    
+}
+
+CMTMailImp::~CMTMailImp ()
+{
+    if ( mSock != 0 )   CloseSmtp();
+
+    if ( mFrom != NULL )            delete mFrom;
+    if ( mToList != NULL )          delete mToList;
+    if ( mCCList != NULL )          delete mCCList;
+    if ( mBCCList != NULL )         delete mBCCList;
+    if ( mSubject != NULL )         delete mSubject;
+    if ( mText != NULL )            delete mText;
+    if ( mTextFile != NULL )        delete mTextFile;
+    if ( mAttachment != NULL )      delete mAttachment;
+    if ( mStatusText != NULL )      delete mStatusText;
+    if ( mTempString != NULL )      delete mTempString;
+    if ( mSmtpServer != NULL )      delete mSmtpServer;
+    if ( mInvalidRecipients != NULL ) delete mInvalidRecipients;
+
+    if ( mCalendar != NULL )        delete mCalendar;
+    if ( mCalendarMethod != NULL )  delete mCalendarMethod;
+    if ( mCalendarUID != NULL )  delete mCalendarUID;
+    if ( mCalendarStartTime != NULL )  delete mCalendarStartTime;
+    if ( mCalendarLocation != NULL )  delete mCalendarLocation;
+    if ( mCalendarFreq != NULL )  delete mCalendarFreq;
+    if ( mCalendarByDay != NULL )  delete mCalendarByDay;
+
+    
+
+
+
+#if defined (_WIN32)
+    WSACleanup();
+#endif
+}
+
+
+
+CMTMailImp::CMTMailImp (const CMTMailImp &MailImp)
+/***************************************************************************
+**
+** CMTMailImp::CMTMailImp
+**
+** Purpose: Class copy constructor
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    mFrom = NULL;
+    mToList = NULL;
+    mCCList = NULL;
+    mBCCList = NULL;
+    mSubject = NULL;
+    mText = NULL;
+    mTextFile = NULL;
+    mAttachment = NULL;
+    mStatusText = NULL;
+    mTempString = NULL;
+    mSmtpServer = NULL;
+    mInvalidRecipients = NULL;
+    mTempString = NULL;
+
+    mCalendar = NULL;
+    mCalendarMethod = NULL;
+    mCalendarUID = NULL;
+    mCalendarStartTime = NULL;
+    mCalendarLocation = NULL;
+    mCalendarFreq = NULL;
+    mCalendarByDay = NULL;
+
+
+
+    hrSet (&mFrom, MailImp.mFrom);
+    hrSet (&mToList, MailImp.mToList);
+    hrSet (&mCCList, MailImp.mCCList);
+    hrSet (&mBCCList, MailImp.mBCCList);
+    hrSet (&mSubject, MailImp.mSubject);
+    hrSet (&mText, MailImp.mText);
+    hrSet (&mTextFile, MailImp.mTextFile);
+    hrSet (&mAttachment, MailImp.mAttachment);
+    hrSet (&mSmtpServer, MailImp.mSmtpServer);
+    hrSet (&mInvalidRecipients, MailImp.mInvalidRecipients);
+
+    hrSet (&mCalendar, MailImp.mCalendar);
+    hrSet (&mCalendarMethod, MailImp.mCalendarMethod);
+    hrSet (&mCalendarUID, MailImp.mCalendarUID);
+    hrSet (&mCalendarStartTime, MailImp.mCalendarStartTime);
+    hrSet (&mCalendarLocation, MailImp.mCalendarLocation);
+    mCalendarDuration = MailImp.mCalendarDuration;
+    mCalendarReminderMinutes = MailImp.mCalendarReminderMinutes;
+    mCalendarRSVP = MailImp.mCalendarRSVP;
+    hrSet (&mCalendarFreq, MailImp.mCalendarFreq);
+    mCalendarCount = MailImp.mCalendarCount;
+    mCalendarInterval = MailImp.mCalendarInterval;
+    hrSet (&mCalendarByDay, MailImp.mCalendarByDay);
+    
+    mHTML = MailImp.mHTML;
+    mConfidential = MailImp.mConfidential;
+    mPrivate = MailImp.mPrivate;
+    mbMultiPart = MailImp.mbMultiPart;
+    mSock = MailImp.mSock;
+
+    strncpy (mLocalHostName, MailImp.mLocalHostName, sizeof(mLocalHostName));
+    strncpy (mLocalDomainName, MailImp.mLocalDomainName, sizeof(mLocalDomainName));
+    strncpy (mDefaultDomainName, MailImp.mDefaultDomainName, sizeof(mDefaultDomainName));
+    strncpy (mBoundaryStr, MailImp.mBoundaryStr, sizeof(mBoundaryStr));
+    strncpy (mUsername, MailImp.mUsername, sizeof(mUsername));
+    strncpy (mCharset, MailImp.mCharset,sizeof(mCharset));
+    strncpy (mServerIP, MailImp.mServerIP,sizeof(mServerIP));
+
+#if defined(_WIN32)
+    WSADATA     WsaData;
+    if ( WSAStartup (MAKEWORD(1,1),&WsaData) != 0 ) 
+    {    
+        char    zBuffer[255];
+        mStatusCode = WSAGetLastError();
+        sprintf (zBuffer, "Error calling 'WSAStartup'  <%d>", mStatusCode);
+        SetStatusText (zBuffer);
+    }
+#endif
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::operator=
+**
+** Purpose: operator= member function
+**
+** Returns: Reference to the new object
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+CMTMailImp& CMTMailImp::operator= (const CMTMailImp &MailImp)
+{
+    if ( this == &MailImp ) goto RET;
+
+    hrSet (&mFrom, MailImp.mFrom);
+    hrSet (&mToList, MailImp.mToList);
+    hrSet (&mCCList, MailImp.mCCList);
+    hrSet (&mBCCList, MailImp.mBCCList);
+    hrSet (&mSubject, MailImp.mSubject);
+    hrSet (&mText, MailImp.mText);
+    hrSet (&mTextFile, MailImp.mTextFile);
+    hrSet (&mAttachment, MailImp.mAttachment);
+    hrSet (&mSmtpServer, MailImp.mSmtpServer);
+    hrSet (&mInvalidRecipients, MailImp.mInvalidRecipients);
+
+    strncpy (mCharset, MailImp.mCharset, sizeof(mCharset));
+    strncpy (mLocalHostName, MailImp.mLocalHostName, sizeof(mLocalHostName));
+    strncpy (mLocalDomainName, MailImp.mLocalDomainName, sizeof(mLocalDomainName));
+    strncpy (mBoundaryStr, MailImp.mBoundaryStr, sizeof(mBoundaryStr));
+    strncpy (mUsername, MailImp.mUsername, sizeof(mUsername));
+    strncpy (mDefaultDomainName, MailImp.mDefaultDomainName, sizeof(mDefaultDomainName));
+    strncpy (mServerIP, MailImp.mServerIP, sizeof(mServerIP));
+
+    mHTML = MailImp.mHTML;
+    mConfidential = MailImp.mConfidential;
+    mPrivate = MailImp.mPrivate;
+    mbMultiPart = MailImp.mbMultiPart;
+    mSock = MailImp.mSock;
+
+    hrSet (&mCalendar, MailImp.mCalendar);
+    hrSet (&mCalendarMethod, MailImp.mCalendarMethod);
+    hrSet (&mCalendarUID, MailImp.mCalendarUID);
+    hrSet (&mCalendarStartTime, MailImp.mCalendarStartTime);
+    hrSet (&mCalendarLocation, MailImp.mCalendarLocation);
+    mCalendarDuration = MailImp.mCalendarDuration;
+    mCalendarReminderMinutes = MailImp.mCalendarReminderMinutes;
+    mCalendarRSVP = MailImp.mCalendarRSVP;
+    hrSet (&mCalendarFreq, MailImp.mCalendarFreq);
+    mCalendarCount = MailImp.mCalendarCount;
+    mCalendarInterval = MailImp.mCalendarInterval;
+    hrSet (&mCalendarByDay, MailImp.mCalendarByDay);
+
+
+    
+
+
+RET:
+    return *this;
+}
+
+
+
+/***************************************************************************
+**
+** CMTMailImp::SetFrom
+**
+** Purpose: Sets the 'From' member variable
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+void CMTMailImp::SetFrom (const wchar_t *newVal)
+{
+    hrSet (&mFrom, newVal);
+    hrRTrim (mFrom);
+}
+
+void CMTMailImp::SetFrom (const char *newVal, const char *InLocale)
+{
+    hrSet (&mFrom, newVal, InLocale);
+    hrRTrim (mFrom);
+}
+
+/***************************************************************************
+**
+** CMTMailImp::GetFrom
+**
+** Purpose: Get the value from the 'From' member variable
+**
+** Returns: Reference to the 'string' containing the value
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+const wchar_t* CMTMailImp::GetFrom ()
+{
+    return mFrom;
+}
+const string& CMTMailImp::GetFromString ()
+{
+    if ( mTempString != NULL )
+    {
+        delete mTempString;
+        mTempString = NULL;
+    }
+
+    hrWcsToString (&mTempString, mFrom);
+
+    return *mTempString;
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::SetTo
+**
+** Purpose: Sets the 'To' member variable
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::SetTo (const wchar_t *newVal)
+{
+    hrSet (&mToList, newVal);
+}
+void CMTMailImp::SetTo (const char *newVal, const char *InLocale)
+{
+    hrSet (&mToList, newVal, InLocale);
+}
+
+/***************************************************************************
+**
+** CMTMailImp::AppendTo
+**
+** Purpose: Appends to the 'To' member variable
+**
+** Returns: Nothing
+**
+** History: 30-Jun-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::AppendTo (const wchar_t *newVal)
+{
+    if ( mToList != NULL && wcslen(mToList) > 0 ) hrAppend(&mToList, L",");
+
+    hrAppend (&mToList, newVal);
+}
+void CMTMailImp::AppendTo (const char *newVal, const char *InLocale)
+{
+    if ( mToList != NULL && wcslen(mToList) > 0 ) hrAppend(&mToList, L",");
+
+    hrAppend (&mToList, newVal, InLocale);
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::GetTo
+**
+** Purpose: Get the value from the 'To' member variable
+**
+** Returns: Reference to the 'String' containing the value
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+const wchar_t* CMTMailImp::GetTo ()
+{
+    return mToList;
+}
+const string& CMTMailImp::GetToString ()
+{
+    if ( mTempString != NULL )
+    {
+        delete mTempString;
+        mTempString = NULL;
+    }
+
+    hrWcsToString (&mTempString, mToList);
+
+    return *mTempString;
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::SetCC
+**
+** Purpose: Sets the 'CC' member variable
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::SetCC (const wchar_t *newVal)
+{
+    hrSet (&mCCList, newVal);
+}
+
+void CMTMailImp::SetCC (const char *newVal, const char *InLocale)
+{
+    hrSet (&mCCList, newVal, InLocale);
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::AppendCC
+**
+** Purpose: Appends to the 'CC' member variable
+**
+** Returns: Nothing
+**
+** History: 30-Jun-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::AppendCC (const wchar_t *newVal)
+{
+    if ( mCCList != NULL && wcslen(mCCList) > 0 ) hrAppend(&mCCList, L",");
+
+    hrAppend (&mCCList, newVal);
+}
+void CMTMailImp::AppendCC (const char *newVal, const char *InLocale)
+{
+    if ( mCCList != NULL && wcslen(mCCList) > 0 ) hrAppend(&mCCList, L",");
+
+    hrAppend (&mCCList, newVal, InLocale);
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::GetCC
+**
+** Purpose: Get the value from the 'CC' member variable
+**
+** Returns: Reference to the 'String' containing the value
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+const wchar_t* CMTMailImp::GetCC ()
+{
+    return mCCList;
+}
+const string& CMTMailImp::GetCCString ()
+{
+     if ( mTempString != NULL )
+     {
+         delete mTempString;
+         mTempString = NULL;
+     }
+ 
+     hrWcsToString (&mTempString, mCCList);
+ 
+     return *mTempString;
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::SetBCC
+**
+** Purpose: Sets the 'BCC' member variable
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::SetBCC (const wchar_t *newVal)
+{
+    if ( mBCCList != NULL && wcslen(mBCCList) > 0 ) hrAppend(&mBCCList, L",");
+
+    hrSet (&mBCCList, newVal);
+}
+void CMTMailImp::SetBCC (const char *newVal, const char *InLocale)
+{
+    if ( mBCCList != NULL && wcslen(mBCCList) > 0 ) hrAppend(&mBCCList, L",");
+
+    hrSet (&mBCCList, newVal, InLocale);
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::AppendBCC
+**
+** Purpose: Appends to the 'BCC' member variable
+**
+** Returns: Nothing
+**
+** History: 30-Jun-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::AppendBCC (const wchar_t *newVal)
+{
+    if ( mBCCList != NULL && wcslen(mBCCList) > 0 ) hrAppend(&mBCCList, L",");
+
+    hrAppend (&mBCCList, newVal);
+}
+void CMTMailImp::AppendBCC (const char *newVal, const char *InLocale)
+{
+    if ( mBCCList != NULL && wcslen(mBCCList) > 0 ) hrAppend(&mBCCList, L",");
+
+    hrAppend (&mBCCList, newVal, InLocale);
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::GetBCC
+**
+** Purpose: Get the value from the 'BCC' member variable
+**
+** Returns: Reference to the 'String' containing the value
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+const wchar_t* CMTMailImp::GetBCC ()
+{
+    return mBCCList;
+}
+const string& CMTMailImp::GetBCCString ()
+{
+    if ( mTempString != NULL )
+    {
+        delete mTempString;
+        mTempString = NULL;
+    }
+
+    hrWcsToString (&mTempString, mBCCList);
+
+    return *mTempString;
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::SetSubject
+**
+** Purpose: Sets the 'Subject' member variable
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::SetSubject (const wchar_t *newVal)
+{
+    hrSet (&mSubject, newVal);
+    hrRTrim (mSubject);
+
+    // Make sure the subject is only one line of text
+    if ( mSubject != NULL )
+    {
+        wchar_t     *ptr = NULL;
+        if ( (ptr = wcschr(mSubject, L'\r')) != NULL )    *ptr = L'\0';
+        if ( (ptr = wcschr(mSubject, L'\n')) != NULL )    *ptr = L'\0';
+    }
+}
+
+void CMTMailImp::SetSubject (const char *newVal, const char *InLocale)
+{
+    hrSet (&mSubject, newVal, InLocale);
+    hrRTrim (mSubject);
+
+    // Make sure the subject is only one line of text
+    if ( mSubject != NULL )
+    {
+        wchar_t     *ptr = NULL;
+        if ( (ptr = wcschr(mSubject, L'\r')) != NULL )    *ptr = L'\0';
+        if ( (ptr = wcschr(mSubject, L'\n')) != NULL )    *ptr = L'\0';
+    }
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::GetSubject
+**
+** Purpose: Get the value from the 'Subject' member variable
+**
+** Returns: Reference to the 'String' containing the value
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+const wchar_t* CMTMailImp::GetSubject (void)
+{
+    return mSubject;
+}
+const string& CMTMailImp::GetSubjectString ()
+{
+    if ( mTempString != NULL )
+    {
+        delete mTempString;
+        mTempString = NULL;
+    }
+
+    hrWcsToString (&mTempString, mSubject);
+
+    return *mTempString;
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::SetText
+**
+** Purpose: Sets the 'Text' member variable
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::SetText (const wchar_t *newVal)
+{
+    hrSet (&mText, newVal);
+}
+void CMTMailImp::SetText (const char *newVal, const char *InLocale)
+{
+    hrSet (&mText, newVal, InLocale);
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::AppendText
+**
+** Purpose: Appends text to the end of the 'Text' member variable
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::AppendText (const wchar_t *newVal)
+{
+    // Check the last character in the existing text buffer. If it doesn't
+    // end with a newline, add one.
+    
+    if ( mText != NULL &&
+         wcslen(mText) > 0 &&
+         mText[wcslen(mText)-1] != L'\n' &&
+         mText[wcslen(mText)-1] != L'\r' )
+    {
+        hrAppend (&mText, L"\n");
+    }
+
+    hrAppend (&mText, newVal);
+}
+void CMTMailImp::AppendText (const char *newVal, const char *InLocale)
+{
+    // Check the last character in the existing text buffer. If it doesn't
+    // end with a newline, add one.
+    
+    if ( mText != NULL &&
+         wcslen(mText) > 0 &&
+         mText[wcslen(mText)-1] != L'\n' &&
+         mText[wcslen(mText)-1] != L'\r')
+    {
+        hrAppend (&mText, L"\n");
+    }
+
+    hrAppend (&mText, newVal, InLocale);
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::GetText
+**
+** Purpose: Get the value from the 'Text' member variable
+**
+** Returns: Reference to the 'String' containing the value
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+const wchar_t* CMTMailImp::GetText (void)
+{
+    return mText;
+}
+const string& CMTMailImp::GetTextString ()
+{
+    if ( mTempString != NULL )
+    {
+        delete mTempString;
+        mTempString = NULL;
+    }
+
+    hrWcsToString (&mTempString, mText);
+
+    return *mTempString;
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::GetTextLength
+**
+** Purpose: Get the current length of the 'Text' member variable
+**
+** Returns: Length
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+const long CMTMailImp::GetTextLength (void)
+{
+    return wcslen(mText);
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::SetTextFile
+**
+** Purpose: Sets the 'TextFile' member variable
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::SetTextFile (const wchar_t *newVal)
+{
+    hrSet (&mTextFile, newVal);
+}
+void CMTMailImp::SetTextFile (const char *newVal, const char *InLocale)
+{
+    hrSet (&mTextFile, newVal, InLocale);
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::GetTextFile
+**
+** Purpose: Get the value from the 'TextFile' member variable
+**
+** Returns: Reference to the 'String' containing the value
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+const wchar_t* CMTMailImp::GetTextFile (void)
+{
+    return mTextFile;
+}
+const string& CMTMailImp::GetTextFileString ()
+{
+    if ( mTempString != NULL )
+    {
+        delete mTempString;
+        mTempString = NULL;
+    }
+
+    hrWcsToString (&mTempString, mTextFile);
+
+    return *mTempString;
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::SetAttachment
+**
+** Purpose: Sets the 'Attachment' member variable
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::SetAttachment (const wchar_t *newVal)
+{
+    hrSet (&mAttachment, newVal);
+}
+void CMTMailImp::SetAttachment (const char *newVal, const char *InLocale)
+{
+    hrSet (&mAttachment, newVal, InLocale);
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::GetAttachment
+**
+** Purpose: Get the value from the 'Attachment' member variable
+**
+** Returns: Reference to the 'String' containing the value
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+const wchar_t* CMTMailImp::GetAttachment (void)
+{
+    return mAttachment;
+}
+const string& CMTMailImp::GetAttachmentString ()
+{
+    if ( mTempString != NULL )
+    {
+        delete mTempString;
+        mTempString = NULL;
+    }
+
+    hrWcsToString (&mTempString, mAttachment);
+
+    return *mTempString;
+}
+
+
+
+/***************************************************************************
+**
+** CMTMailImp::SetCalendar
+**
+** Purpose: Sets the 'Calendar' member variable
+**
+** Returns: Nothing
+**
+** History: 16-Mar-2004 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::SetCalendar (const wchar_t *newVal)
+{
+    hrSet (&mCalendar, newVal);
+}
+void CMTMailImp::SetCalendar (const char *newVal, const char *InLocale)
+{
+    hrSet (&mCalendar, newVal, InLocale);
+}
+
+void CMTMailImp::SetCalendar (const wchar_t *InMethod,
+                              const wchar_t *InUID,
+                              const wchar_t *InStartTime,
+                              const long    InDuration,
+                              const long    InReminderMinutes,
+                              const wchar_t *InLocation,
+                              const long    InRSVP,
+                              const wchar_t *InFreq,
+                              const long    InCount,
+                              const long    InInterval,
+                              const wchar_t *InByDay)
+{
+    hrSet (&mCalendarMethod, InMethod);
+    hrSet (&mCalendarUID, InUID);
+    hrSet (&mCalendarStartTime, InStartTime);
+    mCalendarDuration = InDuration;
+    mCalendarReminderMinutes = InReminderMinutes;
+    hrSet (&mCalendarLocation, InLocation);
+    mCalendarRSVP = InRSVP;
+
+    hrSet (&mCalendarFreq, InFreq);
+    mCalendarCount = InCount;
+    mCalendarInterval = InInterval;
+    hrSet (&mCalendarByDay, InByDay);
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::GetCalendar
+**
+** Purpose: Get the value from the 'Calendar' member variable
+**
+** Returns: Reference to the 'String' containing the value
+**
+** History: 16-Mar-2004 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+const wchar_t* CMTMailImp::GetCalendar (void)
+{
+    // The API built iCalendar string will normally not be built until the Send 
+    // method is called. If the calendar items have been passed in go ahead and
+    // build it now so we can pass it back to the caller
+    if ( ( mCalendar == NULL || wcslen(mCalendar) == 0 ) &&
+          mCalendarMethod != NULL && wcslen(mCalendarMethod) )
+    {
+        this->BuildiCalendar();
+    }
+
+    return mCalendar;
+}
+const string& CMTMailImp::GetCalendarString ()
+{
+    // The API built iCalendar string will normally not be built until the Send 
+    // method is called. If the calendar items have been passed in go ahead and
+    // build it now so we can pass it back to the caller
+    if ( ( mCalendar == NULL || wcslen(mCalendar) == 0 ) &&
+          mCalendarMethod != NULL && wcslen(mCalendarMethod) )
+    {
+        this->BuildiCalendar();
+    }
+
+    if ( mTempString != NULL )
+    {
+        delete mTempString;
+        mTempString = NULL;
+    }
+
+    hrWcsToString (&mTempString, mCalendar);
+
+    return *mTempString;
+}
+
+
+
+const string& CMTMailImp::GetApplicationNameString ()
+{
+    return *mTempString;
+}
+const string& CMTMailImp::GetClarifyQueueString ()
+{
+    return *mTempString;
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::SetServer
+**
+** Purpose: Sets the 'SmtpServer' member variable
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::SetServer (const wchar_t *newVal)
+{
+    hrSet (&mSmtpServer, newVal);
+    hrRTrim (mSmtpServer);
+}
+void CMTMailImp::SetServer (const char *newVal, const char *InLocale)
+{
+    hrSet (&mSmtpServer, newVal, InLocale);
+    hrRTrim (mSmtpServer);
+}
+
+/***************************************************************************
+**
+** CMTMailImp::SetCharset
+**
+** Purpose: Sets the 'Charset' member variable. This will be used to determine
+**          what character set the email will be formatted in. The default is
+**          utf-8.
+**
+** Returns: Nothing
+**
+** History: 16-DEC-2002 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::SetCharset (const wchar_t *newVal)
+{
+    if ( wcscmp(newVal, L"utf-8") == 0 ||
+         wcscmp(newVal, L"iso-2022-jp") == 0 )
+    {
+        hrWcsToMbs(mCharset, sizeof(mCharset), newVal);
+    }
+
+}
+void CMTMailImp::SetCharset (const char *newVal)
+{
+    if ( strcmp(newVal, "utf-8") == 0 ||
+         strcmp(newVal, "iso-2022-jp") == 0 )
+    {
+        strncpy (mCharset, newVal, sizeof(mCharset));
+        mCharset[sizeof(mCharset)-1] = '\0';
+    }
+}
+
+/***************************************************************************
+**
+** CMTMailImp::Reset
+**
+** Purpose: Reset all of the member variables to their default values
+**
+** Returns: Nothing
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+void CMTMailImp::Reset (void)
+{
+    if ( mFrom != NULL ) mFrom[0] = L'\0';
+    if ( mToList != NULL ) mToList[0] = L'\0';
+    if ( mCCList != NULL ) mCCList[0] = L'\0';
+    if ( mBCCList != NULL ) mBCCList[0] = L'\0';
+    if ( mSubject != NULL ) mSubject[0] = L'\0';
+    if ( mText != NULL ) mText[0] = L'\0';
+    if ( mTextFile != NULL ) mTextFile[0] = L'\0';
+    if ( mAttachment != NULL ) mAttachment[0] = L'\0';
+    
+    strcpy (mCharset, "utf-8");
+    mHTML = false;
+    mConfidential = false;
+    mPrivate = false;
+    mbMultiPart = false;
+    if ( mSmtpServer != NULL ) mSmtpServer[0] = L'\0';
+
+    if ( mCalendar != NULL ) mCalendar[0] = L'\0';
+    if ( mCalendarMethod != NULL ) mCalendarMethod[0] = L'\0';
+    if ( mCalendarUID != NULL ) mCalendarUID[0] = L'\0';
+    if ( mCalendarStartTime != NULL ) mCalendarStartTime[0] = L'\0';
+    if ( mCalendarLocation != NULL ) mCalendarLocation[0] = L'\0';
+    mCalendarDuration = 0;
+    mCalendarReminderMinutes = 0;
+    mCalendarRSVP = false;
+    if ( mCalendarFreq != NULL ) mCalendarFreq[0] = L'\0';
+    mCalendarCount = 0;
+    mCalendarInterval = 0;
+    if ( mCalendarByDay != NULL ) mCalendarByDay[0] = L'\0';
+
+    
+    
+}
+
+
+
+/***************************************************************************
+**
+** CMTMailImp::GetStatusCode
+**
+** Purpose: Get the last status code that was set in the Class
+**
+** Returns: (long) status code
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+long CMTMailImp::GetStatusCode (void) const
+{
+    return mStatusCode;
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::GetStatusText
+**
+** Purpose: Get the last status text that was set in the Class
+**
+** Returns: Reference to the 'String' containing the value
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+const wchar_t* CMTMailImp::GetStatusText (void)
+{
+    return mStatusText;
+}
+const string& CMTMailImp::GetStatusTextString ()
+{
+    if ( mTempString != NULL )
+    {
+        delete mTempString;
+        mTempString = NULL;
+    }
+
+    hrWcsToString (&mTempString, mStatusText);
+
+    return *mTempString;
+}
+
+
+void CMTMailImp::SetStatusText (const wchar_t *InStatusText)
+{
+    hrSet (&mStatusText, InStatusText);
+}
+void CMTMailImp::SetStatusText (const char *InStatusText)
+{
+    hrSet (&mStatusText, InStatusText);
+}
+
+
+
+
+void CMTMailImp::SetTextHTML (const long newVal)
+{
+    mHTML = newVal;
+}
+const long CMTMailImp::GetTextHTML()
+{
+    return mHTML;
+}
+
+void CMTMailImp::SetConfidential (const long newVal)
+{
+    mConfidential = newVal;
+}
+const long CMTMailImp::GetConfidential()
+{
+    return mConfidential;
+}
+
+void CMTMailImp::SetPrivate (const long newVal)
+{
+    mPrivate = newVal;
+}
+const long CMTMailImp::GetPrivate()
+{
+    return mPrivate;
+}
+
+/***************************************************************************
+**
+** CMTMailImp::Connect
+**
+** Purpose: Connect to the SMTP server
+**          Any parameters passed will override the value in that variable.
+**
+** Returns: (long) true or false
+**
+** History: 18-Mar-2003 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+long CMTMailImp::Connect(const wchar_t *InServer)
+{
+    long        lRetStatus = true;
+    char        zSmtpServer[128];
+    char        *ptr = NULL;
+    unsigned long lHostLen;
+
+    char        zSmtpServerList[1000];
+
+
+    // Get the host name of the local host
+    if ( !GetHostName() )
+    {
+        lRetStatus = false;
+        goto RET;
+    }
+
+    // If caller passed in a server name use that instead of the default
+    if ( InServer != NULL && wcslen(InServer) > 0 )
+        SetServer (InServer);
+
+    // generate a list of SMTP servers to connect to
+    GetSmtpServers(zSmtpServerList, sizeof(zSmtpServerList), mSmtpServer);
+   
+
+    // try to keep sending the message to each host until one accepts it
+    ptr = zSmtpServerList;
+
+    while ( strlen(ptr) > 0 )
+    {
+        // Get the next host name in the list
+        lHostLen = strcspn(ptr, ",;"); 
+
+        if ( lHostLen > sizeof(zSmtpServer)) // make sure the result fits
+            lHostLen = sizeof(zSmtpServer);
+
+        strncpy (zSmtpServer, ptr, lHostLen);
+        zSmtpServer[lHostLen] = '\0';        
+
+
+        // Connect to the SMTP server
+        if ( (lRetStatus = ConnectSmtp(zSmtpServer)) ) break; // Successfully connected
+
+        ptr += lHostLen;            // move to the delimiter
+        if ( *ptr != '\0' ) ptr++;  // move past the delimiter if not the end of the string
+    }
+
+RET:
+    return lRetStatus;
+}
+
+/***************************************************************************
+**
+** CMTMailImp::Disconnect
+**
+** Purpose: Disconnect the connection ro the SMTP server
+**
+** Returns: (long) true or false
+**
+** History: 18-Mar-2003 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+long CMTMailImp::Disconnect()
+{
+    long    lRetStatus = true;
+
+    CloseSmtp();    // Close the connection
+
+    return lRetStatus;
+}
+
+
+/***************************************************************************
+**
+** CMTMailImp::Send
+**
+** Purpose: Send the mail message using the values in the member variables.
+**          Any parameters passed will override the value in that variable.
+**
+** Returns: (long) true or false
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+***************************************************************************/
+long CMTMailImp::Send (const wchar_t *InTo,
+                       const wchar_t *InFrom,
+                       const wchar_t *InText,
+                       const wchar_t *InSubject,
+                       const wchar_t *InCC,
+                       const wchar_t *InBCC,
+                       const wchar_t *InAttachments,
+                       const wchar_t *InTextFile)
+{
+    long        lRetStatus = false;
+
+    char        zSmtpServerList[1000];
+    char        zSmtpServer[128];
+    char        *ptr = NULL;
+    
+
+    
+
+    // Set any values that were passed in.
+
+    if ( InTo != NULL && wcslen(InTo) > 0 )                     SetTo (InTo);
+    if ( InFrom != NULL && wcslen(InFrom) > 0 )                 SetFrom (InFrom );
+    if ( InText != NULL && wcslen(InText) > 0 )                 SetText (InText);
+    if ( InSubject != NULL && wcslen(InSubject) > 0 )           SetSubject (InSubject);
+    if ( InCC != NULL && wcslen(InCC) > 0 )                     SetCC (InCC);
+    if ( InBCC != NULL && wcslen(InBCC) > 0 )                   SetBCC (InBCC);
+    if ( InAttachments != NULL && wcslen(InAttachments) > 0 )   SetAttachment (InAttachments);
+    if ( InTextFile != NULL && wcslen(InTextFile) > 0 )         SetTextFile (InTextFile);
+
+    if ( mCalendarMethod != NULL && wcslen(mCalendarMethod) > 0 )
+    {
+        this->BuildiCalendar();
+    }
+
+
+    
+
+// On VMS check for a logical called "TEST_ENVIRONMENT". If it exists, only
+// deliver mail to the person running the program.
+
+#ifdef __VMS
+	{
+		char 	*pTest = getenv("TEST_ENVIRONMENT");
+		if ( pTest != NULL )
+		{
+			SetTo (mUsername); // pwTempToList = mUsername;
+			SetCC (L""); // pwTempCCList = NULL;
+			SetBCC (L""); // pwTempBCCList = NULL;
+		}
+	}
+#endif
+
+    // See if the connection has already been established. If so send the email and leave
+    // the connection open
+    if ( mSock != 0 )
+    {
+        lRetStatus = SendSmtp();
+        goto RET;
+    }
+
+
+    // Get the host name of the local host
+    if ( !GetHostName() )
+    {
+        lRetStatus = false;
+        goto RET;
+    }
+
+    // generate a list of SMTP servers to connect to if none were provided (based on subdomain)
+    GetSmtpServers(zSmtpServerList, sizeof(zSmtpServerList), mSmtpServer);
+   
+    // keep sending the message to each host until one accepts it
+    ptr = zSmtpServerList;
+
+    while ( strlen(ptr) > 0 )
+    {
+        struct in_addr  IPAddrs[20];
+        long        lIPAddrsNum = 0;
+        long        idx;
+
+        unsigned long lHostLen;
+
+        // Get the next host name in the list
+        lHostLen = strcspn(ptr, ",;"); 
+
+        if ( lHostLen > sizeof(zSmtpServer)) // make sure the result fits
+            lHostLen = sizeof(zSmtpServer);
+
+        strncpy (zSmtpServer, ptr, lHostLen);
+        zSmtpServer[lHostLen] = '\0'; 
+
+        // get the IP address(es) for this hostname
+        if ( GetHostbyname(IPAddrs, 20, lIPAddrsNum, zSmtpServer) )
+        {
+            // try sending to each IP address
+            for ( idx = 0; idx < lIPAddrsNum; idx++ )
+            {
+                SetStatusText ("");
+
+                // Connect to the SMTP server
+                if ( (lRetStatus = ConnectSmtp(IPAddrs[idx])) )
+                {
+                    // Successfully connected. Send the email.
+                    lRetStatus = SendSmtp();
+
+                    CloseSmtp(); // make sure the connection is closed
+
+                    if ( lRetStatus ) goto RET; // success or fail and don't try again
+                }
+            }
+        }
+
+        ptr += lHostLen;            // move to the delimiter
+        if ( *ptr != '\0' ) ptr++;  // move past the delimiter if not the end of the string
+    }
+
+RET:
+    // If there were no error returned see if there were any invalid addresses
+    if ( lRetStatus &&
+         mInvalidRecipients != NULL &&
+         wcslen(mInvalidRecipients) > 0 )
+    {
+        // Append the invalid users to end of the current message.
+        mStatusCode = 550;
+        hrAppend (&mStatusText, L" 550 User(s) unknown: ");
+        hrAppend (&mStatusText, mInvalidRecipients);
+
+        lRetStatus = false;
+    }
+
+    return lRetStatus;
+}
+
+
+long CMTMailImp::Send (const char *InTo,
+                       const char *InFrom,
+                       const char *InText,
+                       const char *InSubject,
+                       const char *InCC,
+                       const char *InBCC,
+                       const char *InAttachments,
+                       const char *InTextFile, 
+                       const char *InLocale)
+{
+    long        lStatus;
+
+    wchar_t     *wpTo = NULL;
+    hrMbsToWcs (&wpTo, InTo, InLocale);
+    hrRTrim (wpTo);
+
+    wchar_t     *wpFrom = NULL;
+    hrMbsToWcs (&wpFrom, InFrom, InLocale);
+    hrRTrim(wpFrom);
+
+    wchar_t     *wpText = NULL;
+    hrMbsToWcs (&wpText, InText, InLocale);
+    hrRTrim(wpText);
+
+    wchar_t     *wpSubject = NULL;
+    hrMbsToWcs (&wpSubject, InSubject, InLocale);
+    hrRTrim(wpSubject);
+
+    wchar_t     *wpCC = NULL;
+    hrMbsToWcs (&wpCC, InCC, InLocale);
+    hrRTrim(wpCC);
+
+    wchar_t     *wpBCC = NULL;
+    hrMbsToWcs (&wpBCC, InBCC, InLocale);
+    hrRTrim(wpBCC);
+
+    wchar_t     *wpAttachments = NULL;
+    hrMbsToWcs (&wpAttachments, InAttachments, InLocale);
+    hrRTrim(wpAttachments);
+
+    wchar_t     *wpTextFile = NULL;
+    hrMbsToWcs (&wpTextFile, InTextFile, InLocale);
+    hrRTrim(wpTextFile);
+
+
+    lStatus = this->Send (wpTo,
+                          wpFrom,
+                          wpText,
+                          wpSubject,
+                          wpCC,
+                          wpBCC,
+                          wpAttachments,
+                          wpTextFile);
+
+    if ( wpTo != NULL ) delete wpTo;
+    if ( wpFrom != NULL ) delete wpFrom;
+    if ( wpText != NULL ) delete wpText;
+    if ( wpSubject != NULL ) delete wpSubject;
+    if ( wpCC != NULL ) delete wpCC;
+    if ( wpBCC != NULL ) delete wpBCC;
+    if ( wpAttachments != NULL ) delete wpAttachments;
+    if ( wpTextFile != NULL ) delete wpTextFile;
+
+    return lStatus;
+}
+/****************************************************************************************
+**
+** CMTMailImp::GetHostName
+**
+** Purpose: Get the host name of the local host
+**
+** Returns: Boolean true or false.
+**
+** History: 1-Nov-2002 John Ferguson   Initial Creation
+**          11-Apr-2016 John Ferguson  Modify to look up domain name if it's not returned wit the initial gethostname
+**
+**
+*****************************************************************************************/
+long CMTMailImp::GetHostName()
+{
+    long            bRetStatus = true;
+
+
+    // Get the host name of the local machine
+
+    char    *ptr = NULL;
+    
+    long lStatus = gethostname (mLocalHostName, sizeof(mLocalHostName));
+
+    if ( lStatus == -1 )
+    {
+        char    zBuffer[255];
+        mStatusCode = WSAGetLastError();
+        sprintf (zBuffer, "Error calling 'gethostname'  <%d>", mStatusCode);
+        SetStatusText (zBuffer);
+        goto RET;
+    }
+
+    // parse the domain name out of the local host name
+    //
+    // If the domain was not included as part of the host name then perform another lookup of the hostname we have
+    // to get the domain name.
+    //
+    if ( (ptr = strchr (mLocalHostName, '.')) == NULL )
+    {
+        struct hostent  *psHostEnt = NULL;
+        int             iError = 0;
+
+#if defined(sun)
+    struct hostent  sHostEntity;
+    char            zHostEntBuf[2048];
+
+    psHostEnt = gethostbyname_r(mLocalHostName,
+                                &sHostEntity,
+                                zHostEntBuf, sizeof(zHostEntBuf),
+                                &iError);
+#elif defined(linux)
+    struct hostent  sHostEntity;
+    char            zHostEntBuf[2048];
+    int             iStatus;
+
+
+    iStatus = gethostbyname_r(mLocalHostName,
+                              &sHostEntity,
+                              zHostEntBuf, sizeof(zHostEntBuf),
+                              &psHostEnt,
+                              &iError);
+
+    if ( iStatus != 0 )
+    {
+        psHostEnt = NULL;
+    }
+#elif defined(__xlC__)
+    struct hostent          Htent;
+    struct hostent_data     Ht_data;
+
+    iError = gethostbyname_r(mLocalHostName, &Htent, &Ht_data);
+
+    if ( iError != 0 )
+    {
+        psHostEnt = NULL;
+    }
+    else
+    {
+        psHostEnt = &Htent;
+    }
+#elif defined(_WIN32)
+    psHostEnt = gethostbyname(mLocalHostName);
+#else
+#   error "The CMTMAILW.CPP module has not been coded to compile on this platform yet."
+#endif
+
+
+        if ( psHostEnt != NULL )
+        {
+            strcpy (mLocalHostName, psHostEnt->h_name);
+        }
+    }
+
+    // lower case the hostname name
+	ptr = mLocalHostName;
+	while ( *ptr != '\0' )
+	{
+		if ( *ptr >= 'A' && *ptr <= 'Z' ) *ptr += 32;
+		ptr++;
+	}
+
+
+    // parse out the domain name
+    if ( (ptr = strchr (mLocalHostName, '.')) != NULL )
+    {
+        strcpy (mLocalDomainName, ptr+1);
+    }
+
+    // If the full domain name was not returned default the domain name 
+    if ( strlen(mLocalDomainName) == 0 ) 
+    {
+        strcpy (mLocalDomainName, "micron.com");
+    }
+
+
+	// Store the domain name to use as the default domain name for recipients
+    strncpy (mDefaultDomainName, mLocalDomainName, sizeof(mDefaultDomainName));
+
+
+	// if the domain name is a sub-domain of micron.com then
+	// we only want to store the main domain name
+
+	if ( strstr(mDefaultDomainName, "micron.com") != NULL ) 
+    {
+        strcpy (mDefaultDomainName, "micron.com");
+    }
+RET:
+    return bRetStatus;
+}
+
+/****************************************************************************************
+**
+** CMTMailImp::GetSmtpServers
+**
+** Purpose: Generate a list of SMTP servers to attempt connection to
+**
+** Returns: Boolean true or false.
+**
+** History: 1-Nov-2002 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::GetSmtpServers(char *pzSmtpServerList, 
+                                const long lSmtpServerListSize, 
+                                const wchar_t *pwSmtpServer)
+{
+    long        bRetStatus = true;
+    char	    *pMailHost = NULL;
+
+
+    // If we were given a list of host names use those names, otherwise built a default list
+   
+    if ( pwSmtpServer != NULL && wcslen(pwSmtpServer) > 0 )
+    {
+        wcstombs (pzSmtpServerList, pwSmtpServer, lSmtpServerListSize);
+    }
+    else if ( (pMailHost = getenv("MAILHOST")) != 0 ) // See if the environment variable MAILHOST exists.
+    {
+        strncpy(pzSmtpServerList, pMailHost, lSmtpServerListSize);
+        pzSmtpServerList[lSmtpServerListSize-1] = '\0';
+    }
+    else
+    {
+        strcpy(pzSmtpServerList, "relay");  // use gateway in the local domain if one exists
+
+
+        // If the local domain is something other than "micron.com" ( a sub-domain) then 
+        // add "relay.micron.com" for redundancy
+
+        if ( strcmp (mLocalDomainName, "micron.com") != 0 )  
+            strcat(pzSmtpServerList, ",relay.micron.com");
+
+        if ( strcmp (mLocalDomainName, "sing.micron.com") != 0 )
+            strcat(pzSmtpServerList, ",relay.sing.micron.com");
+    }
+
+    return bRetStatus;
+}
+
+long CMTMailImp::GetHostbyname (struct in_addr  *IPAddrs,
+                                const long lIPAddrsSize,
+                                long &lIPAddrsNum,
+                                const char *pzHostName)
+{
+    long            bRetStatus = true;
+
+    struct hostent  *psHostEnt = NULL;
+    int             iError = 0;
+    long            i;
+
+#if defined(__VMS) || defined(sun)
+    struct hostent  sHostEntity;
+    char            zHostEntBuf[2048];
+
+    psHostEnt = gethostbyname_r(pzHostName,
+                                &sHostEntity,
+                                zHostEntBuf, sizeof(zHostEntBuf),
+                                &iError);
+#elif defined(linux)
+    struct hostent  sHostEntity;
+    char            zHostEntBuf[2048];
+    int             iStatus;
+
+
+    iStatus = gethostbyname_r(pzHostName,
+                              &sHostEntity,
+                              zHostEntBuf, sizeof(zHostEntBuf),
+                              &psHostEnt,
+                              &iError);
+
+    if ( iStatus != 0 )
+    {
+        psHostEnt = NULL;
+    }
+#elif defined(__xlC__)
+    struct hostent          Htent;
+    struct hostent_data     Ht_data;
+
+    iError = gethostbyname_r(pzHostName, &Htent, &Ht_data);
+
+    if ( iError != 0 )
+    {
+        psHostEnt = NULL;
+    }
+    else
+    {
+        psHostEnt = &Htent;
+    }
+#elif defined(_WIN32)
+    psHostEnt = gethostbyname(pzHostName);
+#else
+#   error "The CMTMAIL.CPP module has not been coded to compile on this platform yet."
+#endif
+
+
+    // did we find a DNS entry?
+    if ( psHostEnt  == NULL )
+    {
+        char    zBuffer[255];
+
+#if defined (unix) || defined(__xlC__) || defined(__VMS)
+            sprintf(zBuffer, "Error calling gethostbyname  <%d>  host <%s>", iError, pzHostName);
+            mStatusCode = iError;
+#else
+            sprintf(zBuffer, "Error calling gethostbyname  <%d>  host <%s>", WSAGetLastError(), pzHostName);
+            mStatusCode = WSAGetLastError();
+#endif
+
+        SetStatusText (zBuffer);
+        bRetStatus = false;
+        goto RET;
+    }
+
+    // save all the IP addresses for this name
+    for ( i = 0; psHostEnt->h_addr_list[i] != 0 && lIPAddrsNum < 20; i++ )
+    {
+        IPAddrs[lIPAddrsNum++] = *((struct in_addr*)psHostEnt->h_addr_list[i]);
+    }
+
+
+RET:
+    return bRetStatus;
+}
+
+/****************************************************************************************
+**
+** CMTMailImp::ConnectSmtp
+**
+** Purpose: To Connect to the SMTP host
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::ConnectSmtp (const char *pzSmtpServer)
+{
+    long            bRetStatus = true;
+
+    struct hostent      *psHostEnt = NULL;
+    long            i;
+
+    struct in_addr  IPAddrs[10];
+    long        lIPAddrsNum = 0;
+    
+    int     iError = 0;
+
+#if defined(__VMS) || defined(sun)
+    struct hostent  sHostEntity;
+    char            zHostEntBuf[2048];
+
+    psHostEnt = gethostbyname_r(pzSmtpServer,
+                                &sHostEntity,
+                                zHostEntBuf, sizeof(zHostEntBuf),
+                                &iError);
+#elif defined(linux)
+    struct hostent  sHostEntity;
+    char            zHostEntBuf[2048];
+    int             iStatus;
+
+
+    iStatus = gethostbyname_r(pzSmtpServer,
+                              &sHostEntity,
+                              zHostEntBuf, sizeof(zHostEntBuf),
+                              &psHostEnt,
+                              &iError);
+
+    if ( iStatus != 0 )
+    {
+        psHostEnt = NULL;
+    }
+#elif defined(__xlC__)
+    struct hostent          Htent;
+    struct hostent_data     Ht_data;
+
+    iError = gethostbyname_r(pzSmtpServer, &Htent, &Ht_data);
+
+    if ( iError != 0 )
+    {
+        psHostEnt = NULL;
+    }
+    else
+    {
+        psHostEnt = &Htent;
+    }
+#elif defined(_WIN32)
+    psHostEnt = gethostbyname(pzSmtpServer);
+#else
+#   error "The CMTMAIL.CPP module has not been coded to compile on this platform yet."
+#endif
+
+
+
+
+    // did we find a DNS entry?
+    if ( psHostEnt  == NULL )
+    {
+        char    zBuffer[255];
+
+#if defined (unix) || defined(__xlC__) || defined(__VMS)
+            sprintf(zBuffer, "Error calling gethostbyname  <%d>  host <%s>", iError, pzSmtpServer);
+            mStatusCode = iError;
+#else
+            sprintf(zBuffer, "Error calling gethostbyname  <%d>  host <%s>", WSAGetLastError(), pzSmtpServer);
+            mStatusCode = WSAGetLastError();
+#endif
+
+        SetStatusText (zBuffer);
+        bRetStatus = false;
+        goto RET;
+    }
+
+
+    // save all the IP addresses for this name
+    for ( i = 0; psHostEnt->h_addr_list[i] != 0 && lIPAddrsNum < 20; i++ )
+    {
+        IPAddrs[lIPAddrsNum++] = *((struct in_addr*)psHostEnt->h_addr_list[i]);
+    }
+
+
+    // Try connection to the SMTP server(s) 
+    for ( i = 0; i < lIPAddrsNum; i++ )
+    {
+        if ( (bRetStatus = ConnectSmtp(IPAddrs[i])) ) break;  // on success exit loop
+    }
+
+RET:
+    return bRetStatus;
+}
+
+
+
+long CMTMailImp::ConnectSmtp (const struct in_addr &IPAddr)
+{
+    long        lStatus;
+    long        bRetStatus = true;
+    char        zBuffer[255];
+    long        lBytes;
+
+
+
+    struct sockaddr_in  sSockAddr;
+
+#if defined(_WIN32)
+    strncpy (mServerIP, inet_ntoa(IPAddr), sizeof(mServerIP)); // format the IP address to an ascii string
+    mServerIP[sizeof(mServerIP)-1] = '\0';
+#endif
+
+
+    
+    // make sure there isn't a socket already open
+    if ( mSock != 0 ) CloseSmtp();
+    
+    // Open a new socket
+    if ( (mSock = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1 )
+    {
+        char     zBuffer[255];
+        mStatusCode = WSAGetLastError();
+        sprintf (zBuffer, "Error calling 'socket'  <%d>", mStatusCode);
+        SetStatusText (zBuffer);
+
+        bRetStatus = false;
+        mSock = 0;
+        goto RET;
+    }
+    
+    // Connect to the socket
+    
+    sSockAddr.sin_family = 2; // psHostEnt->h_addrtype;
+    sSockAddr.sin_port = htons (25);
+    sSockAddr.sin_addr = IPAddr;
+    lStatus = connect (mSock,
+                       (struct sockaddr*)&sSockAddr,
+                       sizeof(sSockAddr));
+
+    if ( lStatus == -1 )
+    {
+        char     zBuffer[255];
+        mStatusCode = WSAGetLastError();
+        sprintf (zBuffer, "Error calling 'connect' <%d>", mStatusCode);
+        SetStatusText (zBuffer);
+
+        CloseSmtp();    // make sure the socket gets closed
+
+        bRetStatus = false;
+        goto RET;
+    }
+
+
+    
+    // Receive the initial welcome message
+    lBytes = RecvTcp (zBuffer, sizeof(zBuffer));
+
+    if ( lBytes == 0 )
+    {
+        char     zBuffer[255];
+        mStatusCode = WSAGetLastError();
+        sprintf (zBuffer, "Error receiving welcome message on TCP Recv <%d> [%s]", mStatusCode, mServerIP);
+        SetStatusText (zBuffer);
+
+        CloseSmtp();    // make sure socket gets closed
+        bRetStatus = false;
+        goto RET;
+    }
+
+    mStatusCode = atoi (zBuffer);
+    SetStatusText (zBuffer);
+
+    if ( mStatusCode != 220 )
+    {
+        CloseSmtp();    // make sure socket gets closed
+        bRetStatus = false;
+        goto RET;
+    }
+
+    
+    // Send HELO
+    sprintf (zBuffer, "HELO %s\r\n", mLocalHostName);
+    SendTcp (zBuffer);
+    lBytes = RecvTcp (zBuffer, sizeof(zBuffer));
+
+    if ( lBytes == 0 )
+    {
+        char     zBuffer[255];
+        mStatusCode = WSAGetLastError();
+        sprintf (zBuffer, "Error receiving HELO response on TCP Recv <%d> [%s]", mStatusCode, mServerIP);
+        SetStatusText (zBuffer);
+
+        CloseSmtp();    // make sure socket gets closed
+        bRetStatus = false;
+        goto RET;
+    }
+
+    mStatusCode = atoi (zBuffer);
+    SetStatusText (zBuffer);
+
+    if ( mStatusCode != 250 )
+    {
+        CloseSmtp();    // make sure the socket gets closed
+        bRetStatus = false;
+        goto RET;
+    }
+
+RET:
+    return  bRetStatus;
+}
+/****************************************************************************************
+**
+** CMTMailImp::SendSmtp
+**
+** Purpose: Sends an email using the SMTP protocol
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendSmtp()
+{
+    long            lRetStatus = 1;
+    long            bText8Bit = false;
+    wchar_t         *pwTempAddrList = NULL;
+    long            lStatus = false;
+
+    // Initialize member variables
+
+    mBoundaryStr[0] = '\0';
+    if ( mInvalidRecipients != NULL ) mInvalidRecipients[0] = L'\0';
+
+    mbMultiPart = false;
+
+
+    // If both text and and an attachment was given then multipart
+    if ( ( (mText != NULL && wcslen(mText) > 0) || (mTextFile != NULL && wcslen(mTextFile) > 0) ) &&
+         ( (mAttachment != NULL && wcslen(mAttachment) > 0) || (mCalendar != NULL && wcslen(mCalendar) > 0) )  )
+    {
+        mbMultiPart = true;
+    }
+          
+    // If if more than one attachment is to be sent.
+    if ( mAttachment != NULL && 
+            ( wcschr(mAttachment, L',') != NULL ||
+              wcschr(mAttachment, L';') != NULL ) )
+    {
+        mbMultiPart = true;
+    }
+
+    // check if there are any 8-bit characters in the text message so we know what charset to use
+
+    bText8Bit = hrIs8Bit(mText, mTextFile);
+    
+    // Set the FROM name and send it to the SMTP server
+    
+    if ( !SendFrom() )
+    {
+        lRetStatus = 0;
+        goto RET;
+    }
+   
+
+    // clean up the lists and load any dist lists
+
+    hrSet (&pwTempAddrList, L"");
+    hrParseList (&pwTempAddrList, mToList);
+    hrSet (&mToList, pwTempAddrList);
+
+    hrSet (&pwTempAddrList, L"");
+    hrParseList (&pwTempAddrList, mCCList);
+    hrSet (&mCCList, pwTempAddrList);
+
+    hrSet (&pwTempAddrList, L"");
+    hrParseList (&pwTempAddrList, mBCCList);
+    hrSet (&mBCCList, pwTempAddrList);
+
+
+    // Send each of the recipient lists
+    lStatus =  SendRcptList(mToList);
+    lStatus |= SendRcptList(mCCList);
+    lStatus |= SendRcptList(mBCCList);
+
+
+    // Make sure there was at least one valid recipient
+    if ( !lStatus )
+    {
+        // There were no valid addresses
+        char    zError[255];
+        sprintf (zError, "503 No valid recipients [%s]", mServerIP); 
+        SetStatusText (zError);
+        mStatusCode = 503;
+        lRetStatus = -1; // Failed but don't try another server
+        goto RET;
+    }
+
+    // Tell the SMTP server we're starting to send data and generate the SMTP headers
+    if ( !SendData(bText8Bit) )
+    {
+        lRetStatus = 0;
+        goto RET;
+    }
+
+    // Add the Text to the message
+    if ( !SendText() )
+    {
+       lRetStatus = 0;
+       goto RET;
+    }
+    
+    // Add the Text File to the message (if any)
+    
+    if ( !SendTextFile () )
+    {
+        lRetStatus = 0;
+        goto RET;
+    }
+
+    // add each of the attachments to the message
+
+    if ( !SendAttachment() )
+    {
+        lRetStatus = 0;
+        goto RET;
+    }
+
+    if ( !SendCalendar() )
+    {
+        lRetStatus = 0;
+        goto RET;
+    }
+    
+    // Tell the SMTP server to finish sending the message
+    
+    if ( !SendEOM() )
+    {
+        lRetStatus = 0;
+        goto RET;
+    }
+
+RET:    
+    if ( pwTempAddrList != NULL ) delete pwTempAddrList;
+
+    return lRetStatus;
+}
+
+/****************************************************************************************
+**
+** CMTMailImp::CloseSmtp
+**
+** Purpose: Close the SMTP connection. Send the QUIT command to tell the
+**          server we're disconnecting
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::CloseSmtp (void)
+{
+    if ( mSock != 0 )
+    {
+        SendTcp("QUIT\n");
+#if defined (_WIN32)
+        closesocket (mSock);
+#else
+        close (mSock);
+#endif
+        mSock = 0;
+    }
+    return true;
+}
+/****************************************************************************************
+**
+** CMTMailImp::RecvTcp
+**
+** Purpose: Receive a line of text from the TCP/IP socket. Since TCP is stream
+**          oriented we may not get an entire response with one read. This routine
+**          keeps reading until the carriage return is found.
+**
+** Returns: Number of bytes read
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::RecvTcp (char        *pzBuffer,
+                          const long  lBufferSize)
+{
+    long            lStatus;
+    long            lMsgLen = 0;
+    long            bEol = false;
+    struct timeval  sTimeout = {0,0};
+    fd_set          sRmask;
+    long            lNumBytes;
+    char            *pzPtr = NULL;
+
+    const long      TIMEOUT = 60;
+    const long      MAX_LOOPS = 1000;
+
+    time_t          lTime = time(NULL);
+    long            lLoopCnt = 0;
+    
+
+    while ( !bEol &&
+            lMsgLen < lBufferSize-1 &&
+            time(NULL)-lTime <= TIMEOUT &&      // check the timer on each loop just in case
+            lLoopCnt < MAX_LOOPS )              // detect an infinite loop situation before timeout 
+    {                                           //   the loop count should rarely be more than 1
+        lLoopCnt++;
+
+        sTimeout.tv_sec = TIMEOUT;
+
+        FD_ZERO (&sRmask);
+        FD_SET (mSock, &sRmask);
+
+        // wait for data sent to us
+        lStatus = select (mSock+1, &sRmask, 0, 0, &sTimeout);
+
+        if ( lStatus <= 0 )
+        {
+            WSASetLastError (WSAETIMEDOUT);
+            pzBuffer[0] = '\0';
+            lMsgLen = -1;
+            goto RET;
+        }
+
+        // read the data sent to us
+        lNumBytes = recv (mSock, &pzBuffer[lMsgLen], lBufferSize-lMsgLen-1, 0);
+
+        if ( lNumBytes == -1 )
+        {
+            pzBuffer[0] = '\0';
+            lMsgLen = -1;
+            goto RET;
+        }
+
+        // Add this data to what we've received so far
+        lMsgLen += lNumBytes;
+        pzBuffer[lMsgLen] = '\0';
+
+        
+        // check to see if we got the entire line, if not read some more
+        if ( (pzPtr = strchr (pzBuffer, '\r')) != NULL )
+        {
+            bEol = true;
+            *pzPtr = '\0';
+        }
+    }
+
+    // check to see if we timed out 
+    if ( (!bEol && time(NULL)-lTime > TIMEOUT) ||
+         lLoopCnt > MAX_LOOPS )
+    {
+        WSASetLastError (WSAETIMEDOUT);
+        pzBuffer[0] = '\0';
+        lMsgLen = -1;
+        goto RET;
+    }
+
+RET:
+    return strlen(pzBuffer);
+}
+long CMTMailImp::SendTcp (const char *sBuffer)
+{
+    return send(mSock, sBuffer, strlen(sBuffer), 0);
+}
+/****************************************************************************************
+**
+** CMTMailImp::SubjectHeader
+**
+** Purpose: Build and send the "Subject" line of the message header
+**
+** Returns: Nothing
+**
+** History: 18-Feb-2002 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+void CMTMailImp::SendSubjectHeader()
+{
+    char    zLine[1001] = "Subject: ";
+    long    bIs8Bit = false;
+    char    zTemp[980];
+
+    // check if there are any non-ASCII characters (unicode), if so we'll need to convert to UTF-8
+    long len = wcslen(mSubject);
+    for ( long idx = 0; idx <= len; idx++ )
+    {
+        if ( mSubject[idx] >= 0x80 ) 
+        {
+            bIs8Bit = true;
+            break;
+        }
+    }
+
+    if ( !bIs8Bit ) // No 8 bit characters (all ASCII)
+    {
+        // convert the line to a multibyte string and send it
+        hrWcsToMbs (zTemp, sizeof(zTemp), mSubject);
+
+        strncpy (&zLine[9], zTemp, sizeof(zLine)-11);
+        zLine[sizeof(zLine)-12] = '\0';
+        strcat (zLine, "\r\n");
+        SendTcp (zLine);
+    }
+    else
+    {
+        char        *ptr = NULL;
+        char        *pzSubject = NULL;
+
+        // first Convert the subject to the specified charset
+        hrWcsToCharset (&pzSubject, mSubject, mCharset);
+
+        // The utf-8 version of the subject line will need to be converted to
+        // base 64. If the subject is too long it will need to be broken apart 
+        // into seperate lines. Each line can only be 76 characters so we need 
+        // to limit each line to 39 utf-8 characters to allow for the base64 
+        // expansion and for the rest of the header characters.
+
+        ptr = pzSubject;
+
+        while ( strlen(ptr) > 0 )
+        {
+            if ( mCharset == NULL || 
+                 strlen(mCharset) == 0 ||
+                 strcmp(mCharset, "utf-8") == 0 )
+            {
+                strcat (zLine, "=?utf-8?B?"); // specify the subject will be utf-8 base64 encoded
+            }
+            else if ( mCharset != NULL && strcmp(mCharset, "iso-2022-jp") == 0 )
+            {
+                strcat (zLine, "=?iso-2022-jp?B?"); // jpf - need to get correct format
+            }
+
+
+
+            if ( strlen(ptr) > 39 )
+            {
+                Base64Line (&zLine[strlen(zLine)], (unsigned char*)ptr, 39);
+                ptr += 39;
+            }
+            else
+            {
+                Base64Line (&zLine[strlen(zLine)], (unsigned char*)ptr, strlen(ptr));
+                ptr += strlen(ptr);
+            }
+
+            strcat (zLine, "?=\r\n");
+            SendTcp (zLine);
+
+            strcpy (zLine, " "); // for a continuation line (if needed)
+        }
+
+        if ( pzSubject != NULL ) delete pzSubject;
+    }
+}
+/****************************************************************************************
+**
+** CMTMailImp::RcptListHeader
+**
+** Purpose: Build and send the "To" or "CC" line of the message header
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendRcptListHeader ( const char *pzLabel,
+                                      const wchar_t *pwRcptList)
+{
+    long        bRetStatus = true;
+    char        zLine[100];
+    wchar_t     wAddr[512];
+    char        zAddr[512];
+    unsigned long lAddrLen;
+    const wchar_t  *pwPtr = NULL;
+
+    if ( pzLabel == NULL || strlen(pzLabel) == 0 ) goto RET;
+    if ( pwRcptList == NULL ) goto RET;
+
+    strcpy(zLine, pzLabel); // Add the label to the first line
+    
+    // Parse out each address and build an 80 character line. The first line
+    // will append the provided label to the beginning. The rest of the lines
+    // will begin with a space.
+
+    pwPtr = pwRcptList;
+
+    while ( pwPtr != NULL && *pwPtr != L'\0' )
+    {
+        // scan for next comma
+
+        lAddrLen = wcscspn(pwPtr, L",");
+
+        if ( lAddrLen > sizeof(wAddr)/sizeof(wchar_t) ) 
+            lAddrLen = sizeof(wAddr)/sizeof(wchar_t);
+
+
+        // copy the address
+
+        wcsncpy (wAddr, pwPtr, lAddrLen);
+        wAddr[lAddrLen] = L'\0';
+
+        
+        pwPtr += lAddrLen;       // move the pointer to the comma 
+
+        if ( *pwPtr == L',' )        // if this is not the end of the list then add a comma to the address
+        {
+            wcscat (wAddr, L","); 
+            pwPtr++;                // move past the comma
+        }
+
+        
+        // If we've run out of room on this line or we hit the end of
+        // the list, send the line.
+        
+        if ( strlen(zLine)+wcslen(wAddr) >= 80 )
+        {
+            strcat (zLine, "\r\n");
+            SendTcp (zLine);
+
+            strcpy (zLine, " ");  // add a space to the beginning of the line to denote a continuation
+        }
+
+        hrWcsToMbs(zAddr, sizeof(zAddr), wAddr);
+        strcat (zLine, zAddr);
+    }
+
+    strcat (zLine, "\r\n");
+    SendTcp (zLine);
+
+RET:
+    return bRetStatus;
+}
+
+
+/****************************************************************************************
+**
+**CMTMailImp::From
+**
+** Purpose: Send the FROM parameter to the SMTP server
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendFrom ()
+{
+    long        bRetStatus = true;
+    char        zBuffer[255];
+    char        zFrom[255];
+    char        *ptr = NULL;
+    long        lBytes;
+  
+    
+    // If 'from' was not provided default to logged in user
+    
+    if ( mFrom == NULL || wcslen(mFrom) == 0 )
+    {
+        hrSet (&mFrom, mUsername);
+        hrAppend (&mFrom, "@");
+        hrAppend (&mFrom, mDefaultDomainName);
+    }
+
+    // Build a "from" name we can use on the SMTP "MAIL FROM:" command (must be single-byte)
+    hrWcsToMbs (zFrom, sizeof(zFrom), mFrom);
+
+    // If the "from" address was sent in the form "First Last <username@micron.com>"
+    // parse out the actual SMTP address
+
+    if ( (ptr = strchr(zFrom, '<')) != NULL )
+    {
+        strcpy (zFrom, ptr+1);
+
+        if ( (ptr = strchr(zFrom, '>')) != NULL ) *ptr = '\0';
+    }
+
+    // remove any carriage control characters
+
+    if ( (ptr = strchr(zFrom, '\n')) != NULL )   *ptr = '\0';
+    if ( (ptr = strchr(zFrom, '\r')) != NULL )   *ptr = '\0';
+
+    // remove any trailing whitespace
+
+    while ( strlen(zFrom) > 0  && 
+            ( zFrom[strlen(zFrom)-1] == L' ' ||
+              zFrom[strlen(zFrom)-1] == L'\t') )     
+    {
+        zFrom[strlen(zFrom)-1] = L'\0';
+    }
+
+    // add the default domain name if it's missing
+
+    if ( strchr(zFrom, '@') == NULL &&
+         strlen(mDefaultDomainName) > 0 )
+    {
+        strcat (zFrom, "@");
+        strcat (zFrom, mDefaultDomainName);
+    }
+    
+    // Send the FROM name
+    
+    sprintf (zBuffer, "MAIL FROM: %s\r\n", zFrom);
+    SendTcp (zBuffer);
+    lBytes = RecvTcp (zBuffer, sizeof(zBuffer));
+
+    if ( lBytes == 0 )
+    {
+        char     zBuffer[255];
+        sprintf (zBuffer, "Error receiving 'MAIL FROM' response on TCP Recv <%d> [%s]", WSAGetLastError(), mServerIP);
+        SetStatusText (zBuffer);
+        bRetStatus = false;
+    }
+
+    SetStatusText (zBuffer);
+    mStatusCode = atoi (zBuffer);
+
+    if ( mStatusCode < 100 ||
+         mStatusCode >= 400 )
+    {
+        bRetStatus = false;
+        goto RET;
+    }
+
+RET:
+    return bRetStatus;
+}
+/****************************************************************************************
+**
+** CMTMailImp::Data
+**
+** Purpose: Send the DATA command to the SMTP server. Build and send the SMTP
+**          message header.
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendData (const long bText8Bit)
+{
+    long        bRetStatus = true;
+    char        zBuffer[255];
+    char        zDateTime[20];
+    char        zMillitm[4];
+    char        zSmtpDateTime[50];
+    char        zTimeZone[20];
+    char        zTemp[512];
+
+    struct      tm res;
+    struct      tm *tmval = NULL;
+
+    long        lBytes;
+
+    memset(&res, 0, sizeof(res));
+
+
+
+#if defined (_WIN32)
+    struct _timeb   sTime;
+
+    const char *days[7] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
+    const char *months[12] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+#else
+    struct timeb    sTime;
+#endif
+    
+
+    // Send the DATA command to the SMTP server which tells it we're
+    // starting to send the actual message.
+    
+    SendTcp ("DATA\r\n");
+    lBytes = RecvTcp (zBuffer, sizeof(zBuffer));
+
+    if ( lBytes == 0 )
+    {
+        char    zBuffer[255];
+        mStatusCode = WSAGetLastError();
+        sprintf (zBuffer, "Error sending 'DATA'  <%d> [%s]", mStatusCode, mServerIP);
+        SetStatusText (zBuffer);
+    }
+
+    SetStatusText (zBuffer);
+    mStatusCode = atoi (zBuffer);
+
+    if ( mStatusCode != 354 )
+    {
+        bRetStatus = false;
+        goto RET;
+    }
+
+    
+    // Get the current time
+#if defined (_WIN32)
+    _ftime(&sTime);
+#else
+    ftime(&sTime);
+#endif
+
+
+    // get the tm structure for the local time
+#if defined(__VMS) || defined(unix)
+    tmval = localtime_r(&(sTime.time), &res);
+#else
+    tmval = localtime(&(sTime.time));
+#endif
+
+    // format the time stamp for the SMTP Date header line
+
+    // Get the time zone offset from GMT to add to the "Date" line
+#if defined (_WIN32)
+
+	
+
+    sprintf (zSmtpDateTime, "%s, %d %s %d %02d:%02d:%02d ", days[tmval->tm_wday], tmval->tm_mday, 
+        months[tmval->tm_mon], tmval->tm_year+1900, 
+        tmval->tm_hour, tmval->tm_min, tmval->tm_sec);
+
+    sprintf (zTimeZone, "%+2.2d00", -(sTime.timezone/60)+sTime.dstflag);
+    
+#elif defined (unix) || defined(__xlC__)
+
+    strftime (zSmtpDateTime,
+              sizeof(zSmtpDateTime),
+              "%a, %d %b %Y %H:%M:%S ",
+              tmval);
+    
+    sprintf (zTimeZone, "%+2.2d00", -(sTime.timezone/60)+tmval->tm_isdst);
+    
+#elif defined(__VMS)
+    {
+        char *pzTZ = getenv ("TCPWARE_TIMEZONE");
+        strncpy (zTimeZone, pzTZ, 5);
+        zTimeZone[5] = '\0';
+    }
+#endif
+
+
+    strncat (zSmtpDateTime, zTimeZone, sizeof(zSmtpDateTime)-strlen(zSmtpDateTime));
+    zSmtpDateTime[sizeof(zSmtpDateTime)-1] = '\0';
+
+
+    // build time stamp to use on Message-ID
+#if defined (_WIN32)
+    sprintf (zDateTime, "%d%02d%02d%02d%02d%02d", tmval->tm_year+1900, tmval->tm_mon+1, tmval->tm_mday,
+        tmval->tm_hour, tmval->tm_min, tmval->tm_sec);
+#else
+    strftime (zDateTime,
+              sizeof(zDateTime),
+              "%Y%m%d%H%M%S",
+              tmval);
+#endif
+    
+
+
+    // Get milli-seconds to add to the time stamp to ensure a unique message-ID
+    sprintf (zMillitm, "%03d", sTime.millitm);  
+    strcat (zDateTime, zMillitm);
+
+    
+    // Build the boundry string to be used for mime headers
+    strcpy (mBoundaryStr, "--Boundary-");
+    strcat (mBoundaryStr, zDateTime);
+    strcat (mBoundaryStr, "--");
+
+    
+    // Build SMTP the header (order here is important for some gateways and clients)
+
+    hrWcsToMbs(zTemp, sizeof(zTemp), mFrom);
+
+    // add the default domain name if it's missing
+
+    if ( strchr(zTemp, '@') == NULL &&
+         strlen(mDefaultDomainName) > 0 )
+    {
+        strcat (zTemp, "@");
+        strcat (zTemp, mDefaultDomainName);
+    }
+
+    sprintf (zBuffer, "From: %s\r\n", zTemp);
+    SendTcp (zBuffer);
+
+
+#if defined (_WIN32)
+    sprintf (zBuffer, "Message-ID: <%s.%x@%s>\r\n", zDateTime, GetCurrentThreadId(), mLocalHostName);
+    SendTcp (zBuffer);
+#else
+    sprintf (zBuffer, "Message-ID: <%s.%x@%s>\r\n", zDateTime, getpid(), mLocalHostName);
+    SendTcp (zBuffer);
+#endif
+
+
+    sprintf (zBuffer, "X-Sender: %s@%s\r\n", mUsername, mLocalHostName);
+    SendTcp (zBuffer);
+
+    // Get the executable name of the calling program 
+    if ( strlen(hrGetExecName()) > 0 )
+    {
+        sprintf (zBuffer, "X-Application: %s\r\n", hrGetExecName());
+        SendTcp (zBuffer);
+    }
+
+
+    
+
+
+
+    sprintf (zBuffer, "Date: %s\r\n", zSmtpDateTime);
+    SendTcp (zBuffer);
+
+    SendSubjectHeader ();
+
+    if ( mToList != NULL && wcslen(mToList) > 0 )
+  	{
+	    SendRcptListHeader ("To: ", mToList); 
+    }
+
+    if ( mCCList != NULL && wcslen(mCCList) > 0 )
+  	{
+    	SendRcptListHeader ("CC: ", mCCList);
+   	}
+
+    SendTcp ("MIME-Version: 1.0\r\n");
+
+#if defined (_WIN32)
+    sprintf (zBuffer, "X-Mailer: MTMail DLL (WIN32) %s\r\n", gRevisionString);
+#elif defined(__VMS)
+    sprintf (zBuffer, "X-Mailer: MTMail RTL (VMS) %s\r\n", gRevisionString);
+#elif defined (unix) || defined(__xlC__)
+    sprintf (zBuffer, "X-Mailer: MTMail lib (unix) %s\r\n", gRevisionString);
+#endif
+    SendTcp (zBuffer);
+
+    if ( mConfidential )
+	{
+		SendTcp ("Sensitivity: Company-Confidential\r\n");
+	}
+
+	if ( mPrivate )
+	{
+		SendTcp ("Sensitivity: Private\r\n");
+	}
+
+    // check if this will be a multipart message
+
+
+    if ( mCalendar != NULL && wcslen(mCalendar) > 0 )
+    {
+        sprintf (zBuffer, "Content-Class: urn:content-classes:calendarmessage\r\n");
+        SendTcp (zBuffer);
+        sprintf (zBuffer, "Content-Type: multipart/alternative; boundary=\"%s\"\r\n", mBoundaryStr);
+        SendTcp (zBuffer);
+        SendTcp ("\r\n"); // end of main SMTP header
+    }
+    else if ( mbMultiPart )
+    {
+        sprintf (zBuffer, "Content-Type: multipart/mixed; boundary=\"%s\"\r\n", mBoundaryStr);
+        SendTcp (zBuffer);
+        SendTcp ("\r\n"); // end of main SMTP header
+    }
+    else if ( mAttachment == NULL || wcslen(mAttachment) == 0 ) // attachment will add this later
+    {
+        char    zCharSet[20] = "us-ascii";
+        if ( bText8Bit ) strcpy (zCharSet, mCharset);
+         
+        char   zText[10] = "plain";
+        if ( mHTML ) strcpy (zText, "html");
+
+        sprintf (zBuffer, "Content-Type: text/%s; charset=\"%s\"\r\n", zText, zCharSet);
+        SendTcp (zBuffer);
+        SendTcp ("\r\n"); // end of main SMTP header
+    }
+
+
+    // write out the header lines for the message part
+    if ( mbMultiPart &&
+         ( (mText != NULL && wcslen(mText) > 0) || 
+           (mTextFile != NULL && wcslen(mTextFile) > 0) ) )
+    {
+        char    zBuffer[255];
+        char    zCharSet[20] = "us-ascii";
+        if ( bText8Bit )  strcpy (zCharSet, mCharset);
+
+        char    zText[10] = "plain";
+        if ( mHTML ) strcpy (zText, "html");
+
+        sprintf (zBuffer, "\r\n--%s\r\n", mBoundaryStr);
+        SendTcp (zBuffer);
+
+        sprintf (zBuffer, "Content-type: text/%s; charset=\"%s\"\r\n", zText, zCharSet);
+        SendTcp (zBuffer);
+
+        SendTcp ("\r\n");
+    }
+
+RET:
+    return bRetStatus;
+}
+/****************************************************************************************
+**
+** CMTMailImp::TextLine
+**
+** Purpose: Send a line of the text message to the SMTP server.
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendTextLine ( const char *sLine )
+{
+    long            lStatus;
+    long            bRetStatus = true;
+
+    if ( sLine == NULL )    goto RET;
+    
+    // If the first character is a dot need to send an extra one
+    if ( strlen(sLine) > 0 && sLine[0] == '.') lStatus = SendTcp (".");
+
+    // Send the line of text
+    lStatus = SendTcp (sLine);
+
+    lStatus = SendTcp ("\r\n");
+
+    if ( lStatus <= 0 )
+    {
+        char     zBuffer[255];
+        mStatusCode = WSAGetLastError();
+        sprintf (zBuffer, "Error on TCP send <%d> [%s]", mStatusCode, mServerIP);
+        SetStatusText (zBuffer);
+
+        bRetStatus = false;
+        goto RET;
+    }
+
+RET:
+    return bRetStatus;
+}
+
+
+/****************************************************************************************
+**
+** CMTMailImp::Text
+**
+** Purpose: Accepts a 'newline' delimited string and sends a line at a
+**          time to ::TextLine
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendText ()
+{
+    long            bRetStatus = true;
+    wchar_t         wLine[1001];
+    unsigned long   lLineLen;
+    wchar_t         wLastTerm = L'\0';
+    char            *pzText = NULL;
+
+    const wchar_t   *pwPtr = mText; // set pointer at beginning of text
+    
+    if ( mText == NULL || wcslen(mText) == 0 )    goto RET;
+  
+    // Parse out each line of text, convert it to utf-8 and pass it into 
+    // ::TextLine
+
+    while ( pwPtr != NULL && *pwPtr != L'\0' )
+    {
+        wLine[0] = L'\0';
+
+        lLineLen = wcscspn(pwPtr, L"\n\r");
+
+        if ( lLineLen > sizeof(wLine)/sizeof(wchar_t) ) 
+            lLineLen = sizeof(wLine)/sizeof(wchar_t)-1;
+
+        wcsncpy(wLine, pwPtr, lLineLen);
+        wLine[lLineLen] = L'\0';
+
+        pwPtr += lLineLen;  // move the pointer to the delimiter
+
+
+        // Check if '\r\n' or '\n\r' was used as a line terminator.  
+        // If so make sure we don't add an extra line.
+
+        if ( wLastTerm == L'\0' ||
+             wLastTerm == *pwPtr || 
+             lLineLen > 0 )
+        {
+            // convert this line to the specified charset
+            hrWcsToCharset (&pzText, wLine, mCharset);
+
+            // send the line of text to the mail gateway
+
+            if ( !SendTextLine (pzText) )
+            {
+                bRetStatus = false;
+                goto RET;
+            }
+
+            delete pzText;
+            pzText = NULL;
+
+            wLastTerm = *pwPtr;  // Save the line terminator used
+        }
+        else    // current term must not be equal to last term and line length was zero
+        {
+            wLastTerm = L'\0';  // force next terminator to line break
+        }
+
+        if ( *pwPtr != L'\0' ) pwPtr++; // move past the delimiter
+    }
+
+RET:
+    if ( pzText != NULL ) delete pzText;
+
+    return bRetStatus;
+}
+/****************************************************************************************
+**
+** CMTMailImp::TextFile
+**
+** Purpose: Open a text file, read each line of the file and pass them into
+**          ::TextLine
+**
+** Returns: Boolean true or false.
+**
+** History: 8-Apr-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendTextFile()
+{
+    long            bRetStatus = true;
+    FILE            *fpFile = NULL;
+    
+    char            ch[3] = {0,0,0};
+//    long            lch = 0;
+    char            *pzLine = NULL;
+    
+    static long BOM_UNKNOWN  = 0;
+    static long BOM_EF_BB_BF = 1;
+    static long BOM_FE_FF    = 2;
+    static long BOM_FF_FE    = 3;
+
+    long            lFileType = BOM_UNKNOWN;
+    long            bText8Bit = false;
+
+    if ( mTextFile == NULL || wcslen(mTextFile) == 0 ) goto RET;
+
+
+#if defined(__VMS)
+
+    // convert the filename to narrow characters
+    char            zFilename[1000];
+    hrWcsToMbs (zFilename, sizeof(zFilename), mTextFile);
+    zFilename[sizeof(zFilename)-1] = '\0';
+    fpFile = fopen (zFilename, "r");
+
+#elif defined (unix) || defined(__xlC__)
+
+    // convert the filename to narrow characters
+    char            zFilename[1000];
+    hrWcsToMbs (zFilename, sizeof(zFilename), mTextFile);
+    zFilename[sizeof(zFilename)-1] = '\0';
+    fpFile = fopen (zFilename, "r");
+
+#elif defined (_WIN32)
+
+    fpFile = _wfopen (mTextFile, L"rb");
+
+#endif
+
+    if ( fpFile == NULL )
+    {
+        mStatusCode = 8;
+        SetStatusText (L"Unable to open file");
+
+        bRetStatus = false;
+        goto RET;
+    }
+
+    // read the first two bytes of the file to get a possible Byte Order Mark (BOM)
+
+    if ( !feof(fpFile) ) ch[0] = fgetc(fpFile);
+    if ( !feof(fpFile) ) ch[1] = fgetc(fpFile);
+
+    if ( ch[0] == (char)0xfe && 
+         ch[1] == (char)0xff ) // UTF-16/UCS-2, little endian
+    {
+        lFileType = BOM_FE_FF;
+        bText8Bit = true;
+    }
+    else if ( ch[0] == (char)0xff && 
+              ch[1] == (char)0xfe ) // UTF-16/UCS-2, big endian
+    {
+        lFileType = BOM_FF_FE;
+        bText8Bit = true;
+    }
+    else // not UCS-2
+    {
+        // read one more byte to see if it's UTF-8
+        if ( !feof(fpFile) ) ch[2] = fgetc(fpFile);
+
+        if ( ch[0] == (char)0xef && 
+             ch[1] == (char)0xbb && 
+             ch[2] == (char)0xbf ) // UTF-8
+        {
+            lFileType = BOM_EF_BB_BF;
+            bText8Bit = true;
+        }
+        else // must be an ASCII file
+        {
+            rewind (fpFile); // rewind the file back to the beginning
+        }
+    }
+
+
+    // read the file in according to the file type from the byte order mark (if any)
+
+    if ( lFileType == BOM_FE_FF ||      // File is USC-2
+         lFileType == BOM_FF_FE )
+    {
+        // read each line of text and send it to the smtp gateway
+
+        wchar_t     wLine[1001];
+
+        while ( fgetws (wLine, sizeof(wLine)/sizeof(wchar_t), fpFile) )
+        {
+            // remove carriage return and/or newline
+            if ( wcslen(wLine) > 0 && wLine[wcslen(wLine)-1] == L'\n' ) 
+                wLine[wcslen(wLine)-1] = L'\0'; 
+            if ( wcslen(wLine) > 0 && wLine[wcslen(wLine)-1] == L'\r' ) 
+                wLine[wcslen(wLine)-1] = L'\0'; 
+
+            // check if we need to reverse the byte order
+            if ( lFileType == BOM_FE_FF )
+            {
+                long lLineLen = wcslen(wLine);
+                for ( long idx = 0; idx < lLineLen; idx++ )
+                {
+                    char    zTmp[2];
+                    char    c;
+                    memcpy (zTmp, (void*)&wLine[idx], 2);
+
+                    c = zTmp[0];
+                    zTmp[0] = zTmp[1];
+                    zTmp[1] = c;
+
+                    memcpy ((void*)&wLine[idx], zTmp, 2);
+                }
+            }
+
+            // convert the line to the specified charset
+            hrWcsToCharset (&pzLine, wLine, mCharset);
+
+            if ( !SendTextLine (pzLine) )
+            {
+                bRetStatus = false;
+                goto RET;
+            }
+        }
+    }
+    else if ( lFileType == BOM_EF_BB_BF ||      // file is utf-8 or ascii
+              lFileType == BOM_UNKNOWN )
+    {
+        char    zLine[1001];
+        
+        while ( fgets (zLine, sizeof(zLine), fpFile) )
+        {
+            // remove carriage return and/or newline
+            if ( strlen(zLine) > 0 && zLine[strlen(zLine)-1] == '\n' ) 
+                zLine[strlen(zLine)-1] = '\0'; // remove newline
+            if ( strlen(zLine) > 0 && zLine[strlen(zLine)-1] == '\r' ) 
+                zLine[strlen(zLine)-1] = '\0'; // remove newline
+
+            // Send the line
+            if ( !SendTextLine (zLine) )
+            {
+                bRetStatus = false;
+                goto RET;
+            }
+        }
+    }
+
+RET:
+    if ( fpFile != NULL ) fclose (fpFile);
+    if ( pzLine != NULL ) delete pzLine;
+
+    return bRetStatus;
+}
+/****************************************************************************************
+**
+** CMTMailImp::SendAttachment
+**
+** Purpose: Build a mime attachment header and encode the specified file
+**          into base64.
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendAttachment()
+{
+    long            bRetStatus = true;
+    char            zBuffer[1001];
+    const wchar_t   *pwFilenamePtr = NULL;
+    wchar_t         *pwTempFilename = NULL;
+    long            lFilenameLen;
+    wchar_t         *pwPtr = NULL;
+    FILE            *fpFile = NULL;
+
+  
+    if ( mAttachment == NULL || wcslen(mAttachment) == 0 )  goto RET;
+
+    pwFilenamePtr = mAttachment;
+
+    while ( pwFilenamePtr != NULL && wcslen(pwFilenamePtr) > 0 )
+    {
+        lFilenameLen = wcscspn(pwFilenamePtr, L",;");    // find the first occurance of one of these delimiters
+
+        pwTempFilename = new wchar_t[lFilenameLen+1];
+
+        wcsncpy (pwTempFilename, pwFilenamePtr, lFilenameLen);
+        pwTempFilename[lFilenameLen] = L'\0';
+
+    
+        // Open the file.
+
+#if defined(__VMS)
+
+        char            zTempFilename[1000];
+        hrWcsToMbs (zTempFilename, sizeof(zTempFilename), pwTempFilename);
+        zTempFilename[sizeof(zTempFilename)-1] = '\0';
+
+        fpFile = fopen (zTempFilename, "rb", "rfm=fix", "mrs=512", "ctx=stm");
+
+#elif defined (unix) || defined(__xlC__)
+
+        char            zTempFilename[1000];
+        hrWcsToMbs (zTempFilename, sizeof(zTempFilename), pwTempFilename);
+        zTempFilename[sizeof(zTempFilename)-1] = '\0';
+
+        fpFile = fopen (zTempFilename, "rb");
+
+#elif defined (_WIN32)
+
+        fpFile = _wfopen (pwTempFilename, L"rb");
+
+#endif
+
+        if ( fpFile == NULL )
+        {
+            mStatusCode = 8;
+            SetStatusText (L"Unable to open file");
+
+            bRetStatus = false;
+            goto RET;
+        }
+
+    
+        // Remove the path name from the filename to add to the mime header
+    
+#if defined (_WIN32)
+
+        while ( (pwPtr = wcschr (pwTempFilename, L'\\')) != NULL )
+        {
+            wcscpy (pwTempFilename, pwPtr+1);
+        }
+
+#elif defined (unix) || defined(__xlC__)
+
+        while ( (pwPtr = wcschr (pwTempFilename, L'/')) != NULL )
+        {
+            wcscpy (pwTempFilename, pwPtr+1);
+        }
+
+#elif defined(__VMS)
+
+        while ( (pwPtr = wcschr(pwTempFilename, L']')) != NULL )
+        {
+            wcscpy (pwTempFilename, pwPtr+1);
+        }
+
+        if ((pwPtr = wcschr (pwTempFilename, L':')) != NULL )
+        {
+            wcscpy (pwTempFilename, pwPtr+1);
+        }
+
+        if ((pwPtr = wcschr (pwTempFilename, L';')) != NULL ) *pwPtr = L'\0';
+
+#endif
+
+
+    
+        // Build the MIME header for this attachment
+    
+        if ( mbMultiPart )
+        {
+            sprintf (zBuffer, "\r\n--%s\r\n", mBoundaryStr);
+            SendTcp (zBuffer);
+        }
+
+        SendContentType(pwTempFilename);
+
+        sprintf (zBuffer, "Content-Transfer-Encoding: base64\r\n");
+        SendTcp (zBuffer);
+
+        SendContentDisposition(pwTempFilename);
+
+        SendTcp ("\r\n");
+
+
+        // Perform the base64 encoding on the file and include it into the message
+    
+        if ( !Base64 (fpFile) )
+        {
+            bRetStatus = false;
+            goto RET;
+        }
+
+        // free the memory for the Temp filename buffer
+
+        if ( pwTempFilename != NULL ) delete pwTempFilename;
+        pwTempFilename = NULL;
+
+        // move past the delimiter
+
+        pwFilenamePtr += lFilenameLen;
+        if ( pwFilenamePtr[0] != L'\0' ) pwFilenamePtr++;
+    }
+
+RET:
+    if ( fpFile != NULL ) fclose (fpFile);
+    if ( pwTempFilename != NULL ) delete pwTempFilename;
+
+    return bRetStatus;
+}
+/****************************************************************************************
+**
+** CMTMailImp::SendCalendar
+**
+** Purpose: Build a mime attachment header and include the iCalendar text
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-2004 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendCalendar()
+{
+    long            bRetStatus = true;
+    char            zBuffer[1001];
+    wchar_t         wMethod[20];
+    wchar_t         wLine[1001];
+    unsigned long   lLineLen;
+    wchar_t         wLastTerm = L'\0';
+    char            *pzText = NULL;
+    wchar_t         *pwPtr = NULL; 
+  
+    if ( mCalendar == NULL || wcslen(mCalendar) == 0 )  goto RET;
+
+
+    // Parse the "METHOD" from the iCalendar text
+
+    if ( (pwPtr = (wchar_t*)wcsstr((const wchar_t*)mCalendar, L"METHOD:")) != NULL )
+    {
+        wcsncpy(wMethod, &pwPtr[7], sizeof(wMethod)/sizeof(wchar_t));
+        wMethod[sizeof(wMethod)/sizeof(wchar_t)-1] = L'\0';
+
+        if ( (pwPtr = wcschr(wMethod, L'\n')) != NULL ) *pwPtr = L'\0';
+        if ( (pwPtr = wcschr(wMethod, L'\r')) != NULL ) *pwPtr = L'\0';
+    }
+
+
+    
+    // Build the MIME header for this attachment
+
+    if ( mbMultiPart )
+    {
+        sprintf (zBuffer, "\r\n--%s\r\n", mBoundaryStr);
+        SendTcp (zBuffer);
+    }
+
+    sprintf (zBuffer, "Content-Class: urn:content-classes:calendarmessage\r\n");
+    SendTcp (zBuffer);
+    sprintf (zBuffer, "Content-Type: text/calendar;\r\n");
+    SendTcp (zBuffer);
+    sprintf (zBuffer, "\tmethod=%ls;\r\n",wMethod);
+    SendTcp (zBuffer);
+    sprintf (zBuffer, "\tcharset=\"utf-8\";\r\n");
+    SendTcp (zBuffer);
+    sprintf (zBuffer, "\tname=\"meeting.ics\"\r\n");
+    SendTcp (zBuffer);
+    SendTcp ("\r\n");
+
+
+
+    // Parse out each line of text, convert it to utf-8 and pass it into 
+    // ::TextLine
+
+    pwPtr = mCalendar; // set pointer at beginning of text
+
+    while ( pwPtr != NULL && *pwPtr != L'\0' )
+    {
+        wLine[0] = L'\0';
+
+        lLineLen = wcscspn(pwPtr, L"\n\r");
+
+        if ( lLineLen > sizeof(wLine)/sizeof(wchar_t) ) 
+            lLineLen = sizeof(wLine)/sizeof(wchar_t)-1;
+
+        wcsncpy(wLine, pwPtr, lLineLen);
+        wLine[lLineLen] = L'\0';
+
+        pwPtr += lLineLen;  // move the pointer to the delimiter
+
+
+        // Check if '\r\n' or '\n\r' was used as a line terminator.  
+        // If so make sure we don't add an extra line.
+
+        if ( wLastTerm == L'\0' ||
+             wLastTerm == *pwPtr || 
+             lLineLen > 0 )
+        {
+            // convert this line to the specified charset
+            hrWcsToCharset (&pzText, wLine, "utf-8");
+
+            // send the line of text to the mail gateway
+
+            if ( !SendTextLine (pzText) )
+            {
+                bRetStatus = false;
+                goto RET;
+            }
+
+            delete pzText;
+            pzText = NULL;
+
+            wLastTerm = *pwPtr;  // Save the line terminator used
+        }
+        else    // current term must not be equal to last term and line length was zero
+        {
+            wLastTerm = L'\0';  // force next terminator to line break
+        }
+
+        if ( *pwPtr != L'\0' ) pwPtr++; // move past the delimiter
+    }
+
+
+
+
+RET:
+
+    return bRetStatus;
+}
+/****************************************************************************************
+**
+** CMTMailImp::Base64
+**
+** Purpose: Encode the specified file into base64 and send the results to
+**          the SMTP server
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::Base64 ( FILE *fpFile )
+{
+    long            bRetStatus = true;
+    char            zLine[80];
+    unsigned char   zData[54];
+    long            lDataLen;
+    long            lBytes;
+
+    
+    // read the file in one block at a time. Each block of data will be
+    // encoded into one line of base64 text.
+
+    while ( !feof(fpFile) )
+    {
+        // Read in the next block of data
+        
+        lDataLen = 0;
+        memset (zData, 0, 54);
+
+        while ( lDataLen < 54 &&
+                !feof(fpFile) )
+        {
+            zData[lDataLen++] = fgetc (fpFile);
+        }
+
+        if ( feof(fpFile) )
+        {
+            zData[--lDataLen] = '\0';
+        }
+
+        // convert the data to a base64 line
+
+        Base64Line (zLine, zData, lDataLen);
+
+        strcat (zLine, "\r\n");
+
+        // send the line of data to the smtp server
+        
+        lBytes = SendTcp (zLine);
+
+        if ( lBytes <= 0 )
+        {
+            char    zBuffer[255];
+            mStatusCode = WSAGetLastError();
+            sprintf (zBuffer, "Error calling send during base64 <%d> [%s]", mStatusCode, mServerIP);
+            SetStatusText (zBuffer);
+
+            bRetStatus = false;
+            goto RET;
+        }
+    }
+
+RET:
+    return bRetStatus;
+}
+long CMTMailImp::Base64 ( const char *pcText )
+{
+    long            bRetStatus = true;
+    char            zLine[80];
+    unsigned char   zData[54];
+    long            lDataLen;
+    long            lBytes;
+    const char      *pcPtr = NULL;
+
+
+
+    pcPtr = pcText;
+
+    while ( pcPtr != NULL && strlen(pcPtr) > 0 )
+    {
+        // get the next block of data
+        
+        lDataLen = 0;
+        memset (zData, 0, 54);
+
+        while ( lDataLen < 54 &&
+                strlen(pcPtr) > 0 )
+        {
+            zData[lDataLen++] = *(pcPtr++);
+        }
+
+        // convert the data to a base64 line
+
+        Base64Line (zLine, zData, lDataLen);
+
+        strcat (zLine, "\r\n");
+
+        // send the line of data to the smtp server
+
+        lBytes = SendTcp (zLine);
+
+        if ( lBytes <= 0 )
+        {
+            char    zBuffer[255];
+            mStatusCode = WSAGetLastError();
+            sprintf (zBuffer, "Error calling send <%d> [%s]", mStatusCode, mServerIP);
+            SetStatusText (zBuffer);
+
+            bRetStatus = false;
+            goto RET;
+        }
+    }
+
+RET:
+    return bRetStatus;
+}
+
+/****************************************************************************************
+**
+** CMTMailImp::Base64Line
+**
+** Purpose: Encode the specified line of text into base64 
+**
+** Returns: Boolean true or false.
+**
+** History: 20-Aug-2001 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::Base64Line ( char *pcBase64, 
+                              const unsigned char *pcLine, 
+                              const long lLineLen)
+{
+    long            bRetStatus = true;
+    char            c1, c2, c3, c4;
+    long            lBase64Len = 0;
+
+    
+    // Encode this line of data into base64
+
+    for ( long i=0; i < lLineLen; i+=3 )
+    {
+        
+        // Three bytes of data will be encoded into four printable characters
+        // by breaking the 24 bits into four 6 bits characters. The six bit
+        // piece of will be mapped into a printable character.
+        
+        c1 =  pcLine[i] >> 2;
+        c2 = ((pcLine[i] << 4) & 060) | ((pcLine[i+1] >> 4) & 017);
+        c3 = ((pcLine[i+1] << 2) & 074) | ((pcLine[i+2] >> 6) & 03);
+        c4 =  pcLine[i+2] & 077;
+
+        
+        // If we didn't end up with an even three bytes we need to make sure we
+        // still end up with four bytes of base64 characters. The extra characters
+        // will be padded with '='.
+        
+        if ( lLineLen-i == 1 )
+        {
+            c3 = -1;
+            c4 = -1;
+        }
+        else if ( lLineLen-i == 2 )
+        {
+            c4 = -1;
+        }
+
+        pcBase64[lBase64Len++] = Base64Encode (c1);
+        pcBase64[lBase64Len++] = Base64Encode (c2);
+        pcBase64[lBase64Len++] = Base64Encode (c3);
+        pcBase64[lBase64Len++] = Base64Encode (c4);
+    }
+
+    pcBase64[lBase64Len] = '\0';
+
+    return bRetStatus;
+}
+
+
+/****************************************************************************************
+**
+** CMTMailImp::Base64Encode
+**
+** Purpose: Encode a single byte into it's printable character using the base64 table
+**
+** Returns: encoded character
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+char CMTMailImp::Base64Encode (const char inch)
+{
+    char    ch = inch;
+
+    if ( ch >= 0 && ch <=25 )
+    {
+        ch += 65;
+    }
+    else if ( ch >= 26 && ch <= 51 )
+    {
+        ch += 71;
+    }
+    else if ( ch >= 52 && ch <= 61 )
+    {
+        ch -= 4;
+    }
+    else if ( ch == 62 )
+    {
+        ch = '+';
+    }
+    else if ( ch == 63 )
+    {
+        ch = '/';
+    }
+    else if ( ch == -1 )
+    {
+        ch = '=';
+    }
+
+    return ch;
+}
+/****************************************************************************************
+**
+** CMTMailImp::Rcpt
+**
+** Purpose: Send a RECIPIENT to the SMTP server. The server will indicate
+**          the validity of the address on that host.
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendRcpt ( const wchar_t *pwAddr )
+{
+    long        bRetStatus = true;
+    char        zBuffer[268];
+    char        zAddr[255];
+    char        *ptr = NULL;
+    long        lBytes;
+
+    if ( pwAddr == NULL || wcslen(pwAddr) == 0 ) goto RET;
+
+    // convert the address to single-byte for the SMTP "RCPT TO:" command
+    hrWcsToMbs (zAddr, sizeof(zAddr), pwAddr);
+
+    // make sure there were no embeded carriage controls in the recipient list
+    // If there are any then the entire list is most likely invalid but we'll
+    // go ahead and send the beginning of the text so if it is invalid it'll 
+    // be returned in the error text and will hopefully point out that the wrong
+    // information is being passed into that parameter
+
+    if ( (ptr = strchr(zAddr, '\r')) != NULL )    *ptr = '\0';
+    if ( (ptr = strchr(zAddr, '\n')) != NULL )    *ptr = '\0';
+    
+    
+
+    // if the address is in the form "First Last <username@micron.com>" parse out the address
+
+    if ( (ptr = strchr(zAddr, '<')) != NULL )
+    {
+        strcpy (zAddr, ptr+1);
+        if ( (ptr = strchr(zAddr, '>')) != NULL ) *ptr = '\0';
+    }
+
+    // trim any leading or trailing spaces
+
+    while ( strlen(zAddr) > 0 && 
+            zAddr[0] == ' ' )
+    {
+        strcpy (zAddr, &zAddr[1]);
+    }
+    
+    while ( strlen(zAddr) > 0 && 
+            zAddr[strlen(zAddr)-1] == ' ' )
+    {
+        zAddr[strlen(zAddr)-1] = '\0';
+    }
+
+    // Send the Recipient name and see if it's acceptable
+    sprintf (zBuffer, "RCPT TO: %s\r\n", zAddr);
+    SendTcp (zBuffer);
+    lBytes = RecvTcp (zBuffer, sizeof(zBuffer));
+
+    if ( lBytes == 0 )
+    {
+        char     zBuffer[255];
+        mStatusCode = WSAGetLastError();
+        sprintf (zBuffer, "Error on 'RCPT TO' response TCP Recv <%d> [%s]", mStatusCode, mServerIP);
+        SetStatusText (zBuffer);
+        bRetStatus = false;
+        goto RET;
+    }
+
+    SetStatusText (zBuffer);
+    mStatusCode = atoi (zBuffer);
+
+    if ( mStatusCode < 100 ||
+         mStatusCode >= 400 )
+    {
+        if ( mStatusCode == 550 || // invalid.  Add to invalid recipients list
+             mStatusCode == 500 || // Command unrecognized
+             mStatusCode == 501)   // ...Command unrecognized
+        {
+            hrAppend (&mInvalidRecipients, pwAddr);
+            hrAppend (&mInvalidRecipients, ", ");
+        }
+        bRetStatus = false;
+        goto RET;
+    }
+
+RET:
+    return bRetStatus;
+}
+/****************************************************************************************
+**
+** CMTMailImp::RcptList
+**
+** Purpose: Add the address to the list and send the address on to ::Rcpt
+**
+** Returns: Boolean true or false.
+**
+** History: 21-Aug-2001 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendRcptList (const wchar_t *pwAddrList)
+{
+    long            bRetStatus = false;
+    wchar_t         wAddr [256] = L"";
+    const wchar_t   *pwPtr = NULL;
+    unsigned long   lAddrLen;
+
+    if ( pwAddrList == NULL || wcslen(pwAddrList) == 0 )    
+    {
+        goto RET;
+    }
+
+    pwPtr = pwAddrList;
+
+    // Parse out the next address
+
+    while ( pwPtr != NULL && *pwPtr != L'\0' ) 
+    {
+        lAddrLen = wcscspn(pwPtr, L",;"); // find the next delimiter
+
+        if ( lAddrLen > sizeof(wAddr)/sizeof(wchar_t) ) 
+            lAddrLen = sizeof(wAddr)/sizeof(wchar_t)-1; // make sure the address fits in the buffer
+
+        wcsncpy(wAddr, pwPtr, lAddrLen);
+        wAddr[lAddrLen] = L'\0';
+
+        // send the address to the SMTP server
+        if ( SendRcpt(wAddr) )  
+            bRetStatus = true; // at least one address was valid
+
+        pwPtr += lAddrLen;               // move to the delimiter
+        if ( *pwPtr != L'\0' ) pwPtr++;  // move past the delimiter if not the end of the string
+    }
+
+RET:
+    return bRetStatus;
+}
+void CMTMailImp::SendContentType(const wchar_t *pwValue)
+{
+    char    zLine[993];
+    long    bIs8bit = false;
+
+    strcpy  (zLine, "Content-type: application/octet-stream;\r\n");
+    SendTcp (zLine);
+
+
+    // Check if value has any 8-bit 
+    long    lValueLen = wcslen(pwValue);
+    for ( long idx = 0; idx < lValueLen; idx++ )
+    {
+        if ( pwValue[idx] >= 0x80 )
+        {
+            bIs8bit = true;
+            break;
+        }
+    }
+
+    if ( !bIs8bit ) // Not 8 bit (all ASCII characters)
+    {
+        SendTcp (" name=");
+        hrWcsToMbs (zLine, sizeof(zLine), pwValue);
+        SendTcp (zLine);
+        SendTcp ("\r\n");
+        
+    }
+    else
+    {
+
+        char        *ptr = NULL;
+        char        *pzValue = NULL;
+
+        strcpy  (zLine, " name=\"");
+
+        // first Convert the subject to the specified charset
+        hrWcsToCharset (&pzValue, pwValue, mCharset);
+
+        // The utf-8 version of the subject line will need to be converted to
+        // base 64. If the subject is too long it will need to be broken apart 
+        // into seperate lines. Each line can only be 76 characters so we need 
+        // to limit each line to 39 utf-8 characters to allow for the base64 
+        // expansion and for the reast of the header characters.
+
+        ptr = pzValue;
+
+        while ( strlen(ptr) > 0 )
+        {
+            // calculate how many utf-8 characters will fit on the line after they've
+            // been converted to base64
+            long    lBytes = (long)((63-strlen(zLine))*(0.75));
+
+
+            if ( mCharset == NULL || 
+                 strlen(mCharset) == 0 ||
+                 strcmp(mCharset, "utf-8") == 0 )
+            {
+                strcat (zLine, "=?utf-8?B?"); // specify the subject will be utf-8 base64 encoded
+            }
+            else if ( mCharset != NULL && strcmp(mCharset, "iso-2022-jp") == 0 )
+            {
+                strcat (zLine, "=?iso-2022-jp?B?"); // jpf - need to get correct format
+            }
+
+            if ( (long)strlen(ptr) > lBytes ) // rest string won't fit on this line
+            {
+                Base64Line (&zLine[strlen(zLine)], (unsigned char*)ptr, lBytes);
+                ptr += lBytes;
+
+                strcat (zLine, "?=\r\n");
+                SendTcp (zLine);
+            }
+            else
+            {
+                Base64Line (&zLine[strlen(zLine)], (unsigned char*)ptr, strlen(ptr));
+                ptr += strlen(ptr);
+
+                strcat (zLine, "?=\"\r\n");
+                SendTcp (zLine);
+            }
+
+            strcpy (zLine, " "); // for a continuation line (if needed)
+        }
+
+        if ( pzValue != NULL ) delete pzValue;
+    }
+}
+void CMTMailImp::SendContentDisposition(const wchar_t *pwValue)
+{
+    char    zLine[1001];
+    long    bIs8bit = false;
+
+    strcpy  (zLine, "Content-Disposition: inline;\r\n");
+    SendTcp (zLine);
+
+    long    lValueLen = wcslen(pwValue);
+    for ( long idx = 0; idx < lValueLen; idx++ )
+    {
+        if ( pwValue[idx] >= 0x80 )
+        {
+            bIs8bit = true;
+            break;
+        }
+    }
+
+    if ( !bIs8bit ) // Not 8 bit (all ASCII characters)
+    {
+        SendTcp (" filename=\"");
+        hrWcsToMbs (zLine, sizeof(zLine), pwValue);
+        SendTcp (zLine);
+        SendTcp ("\"\r\n");
+    }
+    else
+    {
+
+        char        *ptr = NULL;
+        char        *pzValue = NULL;
+
+        strcpy  (zLine, "  filename=\"");
+
+        // first Convert the subject to the specified charset
+
+        hrWcsToCharset (&pzValue, pwValue, mCharset);
+
+        // The utf-8 version of the subject line will need to be converted to
+        // base 64. If the subject is too long it will need to be broken apart 
+        // into seperate lines. Each line can only be 76 characters so we need 
+        // to limit each line to 39 utf-8 characters to allow for the base64 
+        // expansion and for the reast of the header characters.
+
+        ptr = pzValue;
+
+        while ( strlen(ptr) > 0 )
+        {
+            // calculate how many utf-8 characters will fit on the line after they've
+            // been converted to base64
+            long    lBytes = (long)((63-strlen(zLine))*(0.75));
+
+            if ( mCharset == NULL || 
+                 strlen(mCharset) == 0 ||
+                 strcmp(mCharset, "utf-8") == 0 )
+            {
+                strcat (zLine, "=?utf-8?B?"); // specify the subject will be utf-8 base64 encoded
+            }
+            else if ( mCharset != NULL && strcmp(mCharset, "iso-2022-jp") == 0 )
+            {
+                strcat (zLine, "=?iso-2022-jp?B?"); // jpf - need to get correct format
+            }
+
+            if ( (long)strlen(ptr) > lBytes ) // rest string won't fit on this line
+            {
+                Base64Line (&zLine[strlen(zLine)], (unsigned char*)ptr, lBytes);
+                ptr += lBytes;
+
+                strcat (zLine, "?=\r\n");
+                SendTcp (zLine);
+            }
+            else
+            {
+                Base64Line (&zLine[strlen(zLine)], (unsigned char*)ptr, strlen(ptr));
+                ptr += strlen(ptr);
+
+                strcat (zLine, "?=\"\r\n");
+                SendTcp (zLine);
+            }
+
+            
+
+            strcpy (zLine, " "); // for a continuation line (if needed)
+        }
+
+        if ( pzValue != NULL ) delete pzValue;
+
+    }
+}
+/****************************************************************************************
+**
+** CMTMailImp::SendEOM
+**
+** Purpose: Send the '.' to the SMTP server specifying the end of the DATA
+**          portion which causes the email to be send on.
+**
+** Returns: Boolean true or false.
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+long CMTMailImp::SendEOM (void)
+{
+    long        bRetStatus = true;
+    char        zBuffer[255];
+    long        lBytes;
+    
+    // Send the ending MIME boundary if there was an attachment
+    
+    if ( mbMultiPart )
+    {
+        sprintf (zBuffer, "\r\n--%s--\r\n", mBoundaryStr);
+        SendTcp (zBuffer);
+    }
+
+    
+    // Send the closing 'dot' which will tell the server to send the message
+    
+    SendTcp (".\r\n");
+    lBytes = RecvTcp (zBuffer, sizeof(zBuffer));
+
+    if ( lBytes == 0 )
+    {
+        char     zError[255];
+        sprintf (zError, "Error on '.' response TCP Recv <%d> [%s]", WSAGetLastError(), mServerIP);
+        SetStatusText (zError);
+        goto RET;
+    }
+
+    // Append the server IP address to the end of the success message
+    strcat (zBuffer, " [");
+    strcat (zBuffer, mServerIP);
+    strcat (zBuffer, "]");
+
+    SetStatusText (zBuffer);
+    mStatusCode = atoi (zBuffer);
+
+    if ( mStatusCode < 100 ||
+         mStatusCode >= 400 )
+    {
+        bRetStatus = false;
+    }
+
+RET:
+    return bRetStatus;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+//
+// Helper functions
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+
+/////////////////////////////////////////////////////////////////////////
+//
+// hrSet
+//
+// Set a string
+//
+//////////////////////////////////////////////////////////////////////////
+void CMTMailImp::hrSet (wchar_t **Ptr, const wchar_t *newVal)
+{
+    // check if the new value is empty
+    if ( newVal == NULL )
+    {
+        if ( *Ptr != NULL )  *Ptr[0] = L'\0'; 
+        return;
+    }
+
+    // see if new string is longer than the existing string
+    if ( *Ptr != NULL && 
+         wcslen(newVal) > wcslen(*Ptr) )
+    {
+        delete *Ptr;
+        *Ptr = NULL;
+    }
+
+    // if the pointer is null allocate enough memory for the new value
+    if ( *Ptr == NULL )
+    {
+        *Ptr = new wchar_t[wcslen(newVal)+1];
+    }
+
+    if ( *Ptr != NULL ) wcscpy (*Ptr, newVal);
+}
+void CMTMailImp::hrSet (wchar_t **Ptr, const char *newVal, const char *pzLocale)
+{
+    // check to see if the new value is empty
+    if ( newVal == NULL || strlen(newVal) == 0 )
+    {
+        if ( *Ptr != NULL ) *Ptr[0] = L'\0'; 
+        return;
+    }
+
+    // convert the string to wide characters
+
+    wchar_t *pwVal = NULL;
+
+    hrMbsToWcs(&pwVal, newVal, pzLocale);
+    hrSet (Ptr, pwVal);
+
+    if ( pwVal != NULL ) delete pwVal;
+}
+
+
+
+void CMTMailImp::BuildiCalendar()
+{
+
+    char        zDTStamp[17] = "";
+    char        zDTStartTime[17] = "";
+
+
+    wchar_t     szDuration[10] = L"";
+    
+
+    struct      tm res;
+    memset(&res, 0, sizeof(res));
+    struct      tm *tmval = NULL;
+    
+
+#if defined (_WIN32)
+    struct _timeb   sCurrentTime;
+#else
+    struct timeb    sCurrentTime;
+#endif
+
+
+        // Get the current time
+#if defined (_WIN32)
+    _ftime(&sCurrentTime);
+#else
+    ftime(&sCurrentTime);
+#endif
+
+    // get the tm structure for the local time
+#if defined(__VMS) || defined(unix)
+    tmval = localtime_r(&(sCurrentTime.time), &res);
+#else
+    tmval = localtime(&(sCurrentTime.time));
+#endif
+
+
+    // Build the Date Time stamp we'll use in the iCalendar text
+    strftime (zDTStamp,
+              sizeof(zDTStamp),
+              "%Y%m%dT%H%M%S",
+              tmval);
+
+    if ( mCalendarStartTime != NULL && wcschr(mCalendarStartTime, L'T') != NULL ) // Already in ISO-8601 format
+    {
+        wcstombs(zDTStartTime, mCalendarStartTime, sizeof(zDTStartTime));
+    }
+    else
+    {
+        // convert start time to ISO-8601 format
+
+        // convert the wide time string to multibyte
+        char        zStartTime[25];
+        wcstombs(zStartTime, mCalendarStartTime, sizeof(zStartTime));
+
+        // tmStartTime will contain the passed in time with no time zone applied
+        struct      tm tmStartTime = {0,0,0,0,0,0,0,0,0};
+        time_t      tStartTime = 0;
+        long        lTZOffset = -sCurrentTime.timezone;
+
+
+        // check if the time zone offset was included
+        long        pos;
+        if ( (pos = strcspn(zStartTime, "+-")) < (long)strlen(zStartTime) )
+        {
+            lTZOffset = atoi(&zStartTime[pos]);
+            zStartTime[pos] = '\0'; // remove the TZ offset
+        }
+
+
+        // parse out the time and place each element into the 'tm' structure
+
+        char    zTemp[5];
+
+        strncpy (zTemp, zStartTime, 4);
+        zTemp[4] = '\0';
+        tmStartTime.tm_year = atoi(zTemp)-1900;
+        strcpy (zStartTime, &zStartTime[4]);
+
+        strncpy (zTemp, zStartTime, 2);
+        zTemp[2] = '\0';
+        tmStartTime.tm_mon = atoi(zTemp)-1;
+        strcpy (zStartTime, &zStartTime[2]);
+
+        strncpy (zTemp, zStartTime, 2);
+        zTemp[2] = '\0';
+        tmStartTime.tm_mday = atoi(zTemp);
+        strcpy (zStartTime, &zStartTime[2]);
+
+        strncpy (zTemp, zStartTime, 2);
+        zTemp[2] = '\0';
+        tmStartTime.tm_hour = atoi(zTemp);
+        strcpy (zStartTime, &zStartTime[2]);
+
+        strncpy (zTemp, zStartTime, 2);
+        zTemp[2] = '\0';
+        tmStartTime.tm_min = atoi(zTemp);
+        strcpy (zStartTime, &zStartTime[2]);
+
+        tmStartTime.tm_isdst = -1; // let the run time library compute if DST is in effect
+
+
+        // convert the 'tm' structure to 'time_t' so we can easily apply the TZ offset
+        tStartTime = mktime(&tmStartTime);
+
+
+        // Apply the TZ offset to get the time in GMT
+        tStartTime -= (lTZOffset*60);
+
+
+        // convert the GMT 'time_t' back to a 'tm' structure so we can build the time string
+#if defined(__VMS) || defined(unix)
+        tmval = localtime_r(&tStartTime, &res);
+#else
+        tmval = localtime(&tStartTime);
+#endif
+
+        strftime (zDTStartTime,
+              sizeof(zDTStartTime),
+              "%Y%m%dT%H%M%SZ",
+              tmval);
+    }
+
+
+#if defined(_WIN32)
+    _snwprintf(szDuration, sizeof(szDuration)/sizeof(wchar_t), L"PT%dM", mCalendarDuration);
+#elif defined(unix)
+    swprintf(szDuration, sizeof(szDuration)/sizeof(wchar_t), L"PT%dM", mCalendarDuration);
+#endif
+
+    
+
+
+    // Build the iCalendar text
+
+    hrSet (&mCalendar, L"");
+    hrAppend (&mCalendar, L"BEGIN:VCALENDAR\n");
+
+    hrAppend (&mCalendar, L"METHOD:");
+    hrAppend (&mCalendar, mCalendarMethod);
+    hrAppend (&mCalendar, L"\n");
+    
+    hrAppend (&mCalendar, L"PRODID:Micron MTMail\n");
+    hrAppend (&mCalendar, L"VERSION:2.0\n");
+    hrAppend (&mCalendar, L"BEGIN:VEVENT\n");
+
+    hrAppend (&mCalendar, L"DTSTAMP:");
+    hrAppend (&mCalendar, zDTStamp);
+    hrAppend (&mCalendar, L"\n");
+
+    hrAppend (&mCalendar, L"DTSTART:");
+    hrAppend (&mCalendar, zDTStartTime);
+    hrAppend (&mCalendar, L"\n");
+
+
+    // If this a recurring meeting build the RRULE line
+    if ( mCalendarFreq != NULL && wcslen(mCalendarFreq) > 0 )
+    {
+        hrAppend (&mCalendar, L"RRULE:FREQ=");
+        hrAppend (&mCalendar, mCalendarFreq);
+
+        if ( mCalendarCount > 0 ) 
+        {
+            hrAppend (&mCalendar, L";COUNT=");
+            wchar_t szCount[20];
+            
+#if defined(_WIN32)
+            _snwprintf (szCount, sizeof(szCount)/sizeof(wchar_t), L"%d", mCalendarCount);
+#elif defined(unix)
+            swprintf (szCount, sizeof(szCount)/sizeof(wchar_t), L"%d", mCalendarCount);
+#endif
+
+            hrAppend (&mCalendar, szCount);
+        }
+
+        if ( mCalendarInterval > 0 ) 
+        {
+            hrAppend (&mCalendar, L";INTERVAL=");
+            wchar_t szInterval[20];
+            
+#if defined(_WIN32)
+            _snwprintf (szInterval, sizeof(szInterval)/sizeof(wchar_t), L"%d", mCalendarInterval);
+#elif defined(unix)
+            swprintf (szInterval, sizeof(szInterval)/sizeof(wchar_t), L"%d", mCalendarInterval);
+#endif
+        
+            hrAppend (&mCalendar, szInterval);
+        }
+
+        if ( mCalendarByDay != NULL && wcslen(mCalendarByDay) > 0 )
+        {
+            hrAppend (&mCalendar, L";");
+            hrAppend (&mCalendar, mCalendarByDay);
+        }
+
+        hrAppend (&mCalendar, L"\n");
+    }
+
+
+
+    hrAppend (&mCalendar, L"SUMMARY:");
+    hrAppend (&mCalendar, mSubject);
+    hrAppend (&mCalendar, L"\n");
+
+    hrAppend (&mCalendar, L"UID:");
+    hrAppend (&mCalendar, mCalendarUID);
+    hrAppend (&mCalendar, L"\n");
+
+    hrAppend (&mCalendar, L"ORGANIZER:MAILTO:");
+    hrAppend (&mCalendar, mFrom);
+    hrAppend (&mCalendar, L"\n");
+
+
+    // Attendees - Required
+
+    const wchar_t  *pwPtr = mToList;
+    wchar_t         wAddr[255];
+
+    while ( pwPtr != NULL && *pwPtr != L'\0' )
+    {
+        // scan for next comma
+
+        unsigned long lAddrLen = wcscspn(pwPtr, L",;");
+
+        if ( lAddrLen > sizeof(wAddr)/sizeof(wchar_t) ) 
+            lAddrLen = sizeof(wAddr)/sizeof(wchar_t);
+
+        wcsncpy (wAddr, pwPtr, lAddrLen);
+        wAddr[lAddrLen] = L'\0';
+
+        hrAppend (&mCalendar, L"ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION");
+        if ( mCalendarRSVP ) hrAppend (&mCalendar, L";RSVP=TRUE");
+        hrAppend (&mCalendar, L":MAILTO:");
+        hrAppend (&mCalendar, wAddr);
+        hrAppend (&mCalendar, L"\n");
+        
+        pwPtr += lAddrLen; // move the pointer to the comma 
+        if ( *pwPtr != L'\0' ) pwPtr++; 
+    }
+
+    // Attendees - Optional
+
+    pwPtr = mCCList;
+    while ( pwPtr != NULL && *pwPtr != L'\0' )
+    {
+        // scan for next comma
+
+        unsigned long lAddrLen = wcscspn(pwPtr, L",;");
+
+        if ( lAddrLen > sizeof(wAddr)/sizeof(wchar_t) ) 
+            lAddrLen = sizeof(wAddr)/sizeof(wchar_t);
+
+        wcsncpy (wAddr, pwPtr, lAddrLen);
+        wAddr[lAddrLen] = L'\0';
+
+        hrAppend (&mCalendar, L"ATTENDEE;ROLE=OPT-PARTICIPANT;PARTSTAT=NEEDS-ACTION");
+        if ( mCalendarRSVP ) hrAppend (&mCalendar, L";RSVP=TRUE");
+        hrAppend (&mCalendar, L":MAILTO:");
+        hrAppend (&mCalendar, wAddr);
+        hrAppend (&mCalendar, L"\n");
+        
+        pwPtr += lAddrLen;       // move the pointer to the comma 
+        if ( *pwPtr != L'\0' ) pwPtr++; 
+    }
+
+
+    hrAppend (&mCalendar, L"LOCATION:");
+    hrAppend (&mCalendar, mCalendarLocation);
+    hrAppend (&mCalendar, L"\n");
+
+    hrAppend (&mCalendar, L"DURATION:");
+    hrAppend (&mCalendar, szDuration);
+    hrAppend (&mCalendar, L"\n");
+
+
+    hrAppend (&mCalendar, L"DESCRIPTION:");  // need to change newlines to "\N"
+    hrAppend (&mCalendar, mText);
+    hrAppend (&mCalendar, L"\n");
+
+    hrAppend (&mCalendar, L"SEQUENCE:1\n");
+    hrAppend (&mCalendar, L"PRIORITY:5\n");
+    hrAppend (&mCalendar, L"CLASS:Personal\n");
+
+    hrAppend (&mCalendar, L"CREATED:");
+    hrAppend (&mCalendar, zDTStamp);
+    hrAppend (&mCalendar, L"\n");
+
+    hrAppend (&mCalendar, L"LAST-MODIFIED:");
+    hrAppend (&mCalendar, zDTStamp);
+    hrAppend (&mCalendar, L"\n");
+
+    hrAppend (&mCalendar, L"TRANSP:OPAQUE\n");
+
+    if ( wcscmp(mCalendarMethod, L"REQUEST") == 0 )
+    {
+        hrAppend (&mCalendar, L"STATUS:CONFIRMED\n");
+        hrAppend (&mCalendar, L"X-MICROSOFT-CDO-BUSYSTATUS:BUSY\n");
+        hrAppend (&mCalendar, L"X-MICROSOFT-CDO-INSTTYPE:0\n");
+        hrAppend (&mCalendar, L"X-MICROSOFT-CDO-INTENDEDSTATUS:BUSY\n");
+    }
+    else if ( wcscmp(mCalendarMethod, L"REQUEST") == 0 )
+    {
+        hrAppend (&mCalendar, L"STATUS:CANCELLED\n");
+        hrAppend (&mCalendar, L"X-MICROSOFT-CDO-BUSYSTATUS:FREE\n");
+        hrAppend (&mCalendar, L"X-MICROSOFT-CDO-INSTTYPE:0\n");
+    }
+
+    hrAppend (&mCalendar, L"END:VEVENT\n");
+
+    if ( mCalendarReminderMinutes > 0 )
+    {
+        wchar_t szTrigger[20];
+        
+#if defined(_WIN32)
+        _snwprintf (szTrigger, sizeof(szTrigger)/sizeof(wchar_t), L"-PT%dM", mCalendarReminderMinutes);
+#elif defined(unix)
+        swprintf (szTrigger, sizeof(szTrigger)/sizeof(wchar_t), L"-PT%dM", mCalendarReminderMinutes);
+#endif
+
+        hrAppend (&mCalendar, L"BEGIN:VALARM\n");
+
+        hrAppend (&mCalendar, L"TRIGGER:");
+        hrAppend (&mCalendar, szTrigger);
+        hrAppend (&mCalendar, L"\n");
+
+        hrAppend (&mCalendar, L"ACTION:DISPLAY\n");
+        hrAppend (&mCalendar, L"DESCRIPTION:Reminder\n");
+        hrAppend (&mCalendar, L"END:VALARM\n");
+    }
+
+    hrAppend (&mCalendar, L"END:VCALENDAR\n");
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  hrAppend
+//
+//  Append a string to another
+//
+//////////////////////////////////////////////////////////////////////////////////////
+void CMTMailImp::hrAppend (wchar_t **Ptr, const wchar_t *newVal)
+{
+    // check if the new value is empty
+    if ( newVal == NULL || wcslen(newVal) == 0 ) return;
+
+    // Allocate enough memory to append the new string
+    if ( *Ptr == NULL )
+    {
+        *Ptr = new wchar_t [wcslen(newVal)+1];
+
+        if ( *Ptr == NULL ) return; //error
+
+        *Ptr[0] = '\0';
+    }
+
+    if ( *Ptr != NULL )
+    {
+        wchar_t     *tmp = *Ptr;    // save the location of the current buffer
+        
+        *Ptr = new wchar_t[wcslen(*Ptr)+wcslen(newVal)+1]; // allocate enough for both strings
+
+        if ( *Ptr == NULL ) // unable to allocate memory
+        {
+            *Ptr = tmp;     // put the pointer back to the old buffer 
+            return; 
+        }
+
+        wcscpy (*Ptr, tmp); // copy old string to the new buffer
+        delete tmp; // delete the old buffer
+    }
+
+    wcscat (*Ptr, newVal); // append the new string to the old string
+}
+void CMTMailImp::hrAppend (wchar_t **Ptr, const char *newVal, const char *pzLocale)
+{
+    if ( newVal == NULL || strlen(newVal) == 0 ) return;
+
+    // convert the string to wide characters
+
+    wchar_t *pwVal = NULL;
+
+    hrMbsToWcs(&pwVal, newVal, pzLocale);
+    hrAppend (Ptr, pwVal);
+
+    if ( pwVal != NULL ) delete pwVal;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  hrRTrim
+//
+//  Trim the white space off the end of the string
+//
+//////////////////////////////////////////////////////////////////////////////////////
+void CMTMailImp::hrRTrim (wchar_t *wcsStr)
+{
+    if ( wcsStr == NULL ) return;
+
+    wchar_t     *ptr = &wcsStr[wcslen(wcsStr)]; // set pointer to the end of the string
+
+    while ( ptr > wcsStr && *(ptr-1) == L' ' )
+    {
+        *(--ptr) = L'\0';
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  hrParseList
+//
+//  Parse a list of names and dist lists to a wide character string
+//
+//////////////////////////////////////////////////////////////////////////////////////
+void CMTMailImp::hrParseList (wchar_t **List, const wchar_t *newVal)
+{
+    const wchar_t   *wptr = NULL;
+    wchar_t         wAddr[256] = L"";
+    size_t          lAddr;
+
+ 
+    if ( newVal == NULL || wcslen(newVal) == 0 ) return;
+
+    wptr = newVal;
+
+    while ( wcslen(wptr) > 0 )
+    {
+        lAddr = wcscspn(wptr, L",;\n\r");
+
+        if ( lAddr > sizeof(wAddr)/sizeof(wchar_t) ) 
+            lAddr = sizeof(wAddr)/sizeof(wchar_t) - 1; // truncate if too long
+
+        wcsncpy(wAddr, wptr, lAddr);
+        wAddr[lAddr] = L'\0';
+
+        hrRTrim (wAddr);
+
+        if ( wAddr[0] == L'@' )              // distribution list
+        {
+            hrParseDistList (List, &wAddr[1]);
+        }
+        else if ( wcslen(wAddr) > 0 )       // Address
+        {
+            if ( wcschr(wAddr, L'@') == NULL ) // no domain included. Use the local domain
+            {
+                // need to convert the default domain to a wide string
+                wchar_t *pwVal = NULL;
+                hrMbsToWcs (&pwVal, mDefaultDomainName);
+
+                wcscat (wAddr, L"@");
+                wcscat (wAddr, pwVal);
+
+                if ( pwVal != NULL ) delete pwVal;
+            }
+
+
+            if ( *List != NULL && wcslen(*List) > 0 ) // insert comma
+            {
+                hrAppend (List, L",");
+            }
+
+            hrAppend (List, wAddr);
+        }
+
+        // move pointer to the next address
+        lAddr = wcscspn(wptr, L",;\n\r");
+        wptr += lAddr;
+
+        if ( *wptr == '\n' || *wptr == '\r' ) wptr = &newVal[wcslen(newVal)];
+
+        if ( *wptr != '\0' ) wptr++;
+    }
+}
+
+void CMTMailImp::hrParseList (wchar_t **List, const char *newVal, const char *pzLocale)
+{
+    wchar_t *pwVal = NULL;
+
+    // convert multi-byte string to a wide string
+    hrMbsToWcs (&pwVal, newVal, pzLocale);
+
+    // Pass the wide string on to the wide version of hrParseList
+    hrParseList (List, pwVal);
+
+    if ( pwVal != NULL ) delete pwVal;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  hrParseDistList
+//
+//  Parse a distribution list to a wide character string
+//
+//////////////////////////////////////////////////////////////////////////////////////
+long CMTMailImp::hrParseDistList (wchar_t **List, const wchar_t *wDistName)
+{
+    long                ret_status = true;
+    FILE                *fpFile = NULL;
+    char                zLine[1001] = "";
+    wchar_t             wLine[1001] = L"";
+    static long         lDepthCounter = 0;      // for recursive calls
+    char                *ptr = NULL;
+
+    lDepthCounter++;
+
+    char    *zDistName = NULL;
+    zDistName = new char[wcslen(wDistName)+1];
+
+    if ( zDistName == NULL ) // unable to allocate memory
+    {
+        ret_status = false;
+        goto RET;
+    }
+
+    wcstombs(zDistName, wDistName, wcslen(wDistName)+1);
+
+    if ( lDepthCounter > 10 )
+    {
+        ret_status = false;
+        goto RET;
+    }
+
+#ifdef __VMS
+    fpFile = fopen (zDistName, "r", "dna=maildist:file.dis");
+#else
+    fpFile = fopen (zDistName, "r");
+
+    if ( fpFile == NULL &&
+         strchr (zDistName, '.') == NULL ) // if no extension try again with ".dis"
+    {
+        char    zTemp[255];
+        strcpy (zTemp, zDistName);
+        strcat (zTemp, ".dis");
+
+        fpFile = fopen (zTemp, "r");
+    }
+#endif
+
+    if ( fpFile == NULL )
+    {
+        ret_status = false;
+        goto RET;
+    }
+
+    while ( fgets (zLine, sizeof(zLine), fpFile) )
+    {
+        if ( (ptr = strchr (zLine, '\n')) != NULL ) *ptr = '\0';
+        if ( (ptr = strchr (zLine, '!')) != NULL )  *ptr = '\0';
+        if ( (ptr = strchr (zLine, '#')) != NULL )  *ptr = '\0';
+
+        mbstowcs(wLine, zLine, sizeof(zLine));
+
+        hrParseList (List, wLine);
+    }
+
+RET:
+    if ( fpFile ) fclose (fpFile);
+
+    lDepthCounter--;
+
+    if ( zDistName != NULL ) delete zDistName;
+
+    return  ret_status;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////
+//
+//  hrIs8Bit
+//
+//  Check if a file contains 8-bit characters
+//
+//////////////////////////////////////////////////////////////////////////////////////
+long CMTMailImp::hrIs8Bit(const wchar_t *pwText, const wchar_t *pwTextFile)
+{
+    long    bText8Bit = false;
+    
+    // check if there are any 8-bit characters in the text message so we know what charset to use
+    if ( pwText != NULL )
+    {
+        long lTextLen = wcslen(pwText);
+
+        for ( long i = 0; i < lTextLen; i++ )
+        {
+            if ( pwText[i] >= 0x80 )
+            {
+                bText8Bit = true;
+                break;
+            }
+        }
+    }
+
+    // We're sending a text file determine if it contains 8-bit content
+    if ( pwTextFile != NULL && wcslen(pwTextFile) > 0 )
+    {
+        FILE    *fpFile = NULL;
+        char    ch[4];
+
+#if defined(__VMS)
+
+        // convert the filename to a narrow string
+        char            zFilename[1000];
+        hrWcsToMbs(zFilename, sizeof(zFilename), pwTextFile);
+        zFilename[sizeof(zFilename)-1] = '\0';
+        fpFile = fopen (zFilename, "r");
+
+#elif defined (unix) || defined(__xlC__)
+
+        // convert the filename to a narrow string
+        char            zFilename[1000];
+        hrWcsToMbs(zFilename, sizeof(zFilename), pwTextFile);
+        zFilename[sizeof(zFilename)-1] = '\0';
+        fpFile = fopen (zFilename, "r");
+
+#elif defined (_WIN32)
+
+        fpFile = _wfopen (pwTextFile, L"rb");
+
+#endif
+
+        if ( fpFile != NULL ) 
+        {
+            // read the first two bytes to see if there is a "byte-order mark"
+
+            if ( !feof(fpFile) ) ch[0] = fgetc(fpFile);
+            if ( !feof(fpFile) ) ch[1] = fgetc(fpFile);
+
+            if ( ch[0] == (char)0xfe && 
+                 ch[1] == (char)0xff ) // UTF-16/UCS-2, little endian
+            {
+                bText8Bit = true;
+            }
+            else if ( ch[0] == (char)0xff && 
+                      ch[1] == (char)0xfe ) // UTF-16/UCS-2, big endian
+            {
+                bText8Bit = true;
+            }
+            else
+            {
+                if ( !feof(fpFile) ) ch[2] = fgetc(fpFile);
+
+                if ( ch[0] == (char)0xef && 
+                     ch[1] == (char)0xbb && 
+                     ch[2] == (char)0xbf ) // UTF-8
+                {
+                    bText8Bit = true;
+                }
+            }
+
+            fclose (fpFile);
+        }
+    }
+
+    return bText8Bit;
+}
+
+
+/****************************************************************************
+**
+** CMTMailw Wrapper class (wide).
+**
+** The wrapper class member functions just call the the coresponding functions
+** in the implementation class using the pointer to the implementation class.
+** This allows for changes to be made to the implementation class without
+** effecting the wrapper class that's exported to a DLL or the VMS RTL. If
+** a change were to be made to the exposed class all apps using the class
+** would require a re-compile to work correctly.
+**
+******************************************************************************/
+
+CMTMailw::CMTMailw (void)
+{
+    Imp = new CMTMailImp;
+}
+CMTMailw::~CMTMailw (void)
+{
+    delete Imp;
+}
+CMTMailw& CMTMailw::operator= (const CMTMailw &cMail)
+{
+    if ( this == &cMail ) goto RET;
+
+    Imp = new CMTMailImp (*cMail.Imp);
+
+RET:
+    return *this;
+}
+CMTMailw::CMTMailw (const CMTMailw &cMail)
+{
+    Imp = new CMTMailImp (*cMail.Imp);
+}
+
+CMTMailw::CMTMailw (const char *InTo,
+                    const char *InFrom,
+                    const char *InText,
+                    const char *InSubject,
+                    const char *InCC,
+                    const char *InBCC,
+                    const char *InAttachment,
+                    const char *InTextFile, 
+                    const char *InLocale)
+{
+    Imp = new CMTMailImp;
+
+    Imp->Send (InTo,
+               InFrom,
+               InText,
+               InSubject,
+               InCC,
+               InBCC,
+               InAttachment,
+               InTextFile,
+               InLocale);
+}
+
+CMTMailw::CMTMailw (const wchar_t *InTo,
+                    const wchar_t *InFrom,
+                    const wchar_t *InText,
+                    const wchar_t *InSubject,
+                    const wchar_t *InCC,
+                    const wchar_t *InBCC,
+                    const wchar_t *InAttachment,
+                    const wchar_t *InTextFile)
+{
+    Imp = new CMTMailImp;
+
+    Imp->Send (InTo,
+               InFrom,
+               InText,
+               InSubject,
+               InCC,
+               InBCC,
+               InAttachment,
+               InTextFile);
+}
+
+CMTMailw::CMTMailw (const STD(string) &InTo,
+                    const STD(string) &InFrom,
+                    const STD(string) &InText,
+                    const STD(string) &InSubject,
+                    const STD(string) &InCC,
+                    const STD(string) &InBCC,
+                    const STD(string) &InAttachment,
+                    const STD(string) &InTextFile)
+{
+    Imp = new CMTMailImp;
+
+    Imp->Send (InTo.c_str(),
+               InFrom.c_str(),
+               InText.c_str(),
+               InSubject.c_str(),
+               InCC.c_str(),
+               InBCC.c_str(),
+               InAttachment.c_str(),
+               InTextFile.c_str());
+}
+
+
+void CMTMailw::SetFrom (const char *newVal, const char *InLocale)
+{
+    Imp->SetFrom(newVal, InLocale);
+}
+void CMTMailw::SetFrom (const wchar_t *newVal)
+{
+    Imp->SetFrom(newVal);
+}
+void CMTMailw::SetFrom (const STD(string) &newVal)
+{
+    Imp->SetFrom(newVal.c_str());
+}
+const wchar_t* CMTMailw::GetFrom ()
+{
+    return Imp->GetFrom();
+}
+const STD(string)& CMTMailw::sGetFrom ()
+{
+    return Imp->GetFromString();
+}
+
+void CMTMailw::SetTo (const char *newVal, const char *InLocale)
+{
+    Imp->SetTo(newVal, InLocale);
+}
+void CMTMailw::SetTo (const wchar_t *newVal)
+{
+    Imp->SetTo(newVal);
+}
+void CMTMailw::SetTo (const STD(string) &newVal)
+{
+    Imp->SetTo(newVal.c_str());
+}
+void CMTMailw::AppendTo (const char *newVal, const char *InLocale)
+{
+    Imp->AppendTo(newVal, InLocale);
+}
+void CMTMailw::AppendTo (const wchar_t *newVal)
+{
+    Imp->AppendTo(newVal);
+}
+void CMTMailw::AppendTo (const STD(string) &newVal)
+{
+    Imp->AppendTo(newVal.c_str());
+}
+const wchar_t* CMTMailw::GetTo ()
+{
+    return Imp->GetTo ();
+}
+const STD(string)& CMTMailw::sGetTo ()
+{
+    return Imp->GetToString();
+}
+
+void CMTMailw::SetCC (const char *newVal, const char *InLocale)
+{
+    Imp->SetCC(newVal, InLocale);
+}
+void CMTMailw::SetCC (const wchar_t *newVal)
+{
+    Imp->SetCC(newVal);
+}
+void CMTMailw::SetCC (const STD(string) &newVal)
+{
+    Imp->SetCC(newVal.c_str());
+}
+void CMTMailw::AppendCC (const char *newVal, const char *InLocale)
+{
+    Imp->AppendCC(newVal, InLocale);
+}
+void CMTMailw::AppendCC (const wchar_t *newVal)
+{
+    Imp->AppendCC(newVal);
+}
+void CMTMailw::AppendCC (const STD(string) &newVal)
+{
+    Imp->AppendCC(newVal.c_str());
+}
+const wchar_t* CMTMailw::GetCC ()
+{
+    return Imp->GetCC ();
+}
+const STD(string)& CMTMailw::sGetCC ()
+{
+    return Imp->GetCCString();
+}
+
+void CMTMailw::SetBCC (const char *newVal, const char *InLocale)
+{
+    Imp->SetBCC(newVal, InLocale);
+}
+void CMTMailw::SetBCC (const wchar_t *newVal)
+{
+    Imp->SetBCC(newVal);
+}
+void CMTMailw::SetBCC (const STD(string) &newVal)
+{
+    Imp->SetBCC(newVal.c_str());
+}
+void CMTMailw::AppendBCC (const char *newVal, const char *InLocale)
+{
+    Imp->AppendBCC(newVal, InLocale);
+}
+void CMTMailw::AppendBCC (const wchar_t *newVal)
+{
+    Imp->AppendBCC(newVal);
+}
+void CMTMailw::AppendBCC (const STD(string) &newVal)
+{
+    Imp->AppendBCC(newVal.c_str());
+}
+const wchar_t* CMTMailw::GetBCC ()
+{
+    return  Imp->GetBCC ();
+}
+const STD(string)& CMTMailw::sGetBCC ()
+{
+    return Imp->GetBCCString();
+}
+
+void CMTMailw::SetSubject (const char *newVal, const char *InLocale)
+{
+    Imp->SetSubject(newVal, InLocale);
+}
+void CMTMailw::SetSubject (const wchar_t *newVal)
+{
+    Imp->SetSubject(newVal);
+}
+void CMTMailw::SetSubject (const STD(string) &newVal)
+{
+    Imp->SetSubject(newVal.c_str());
+}
+const wchar_t* CMTMailw::GetSubject (void)
+{
+    return Imp->GetSubject ();
+}
+const STD(string)& CMTMailw::sGetSubject ()
+{
+    return Imp->GetSubjectString();
+}
+
+void CMTMailw::SetText (const char *newVal, const char *InLocale)
+{
+    Imp->SetText(newVal, InLocale);
+}
+void CMTMailw::SetText (const wchar_t *newVal)
+{
+    Imp->SetText(newVal);
+}
+void CMTMailw::SetText (const STD(string) &newVal)
+{
+    Imp->SetText(newVal.c_str());
+}
+void CMTMailw::AppendText (const char *newVal, const char *InLocale)
+{
+    Imp->AppendText(newVal, InLocale);
+}
+void CMTMailw::AppendText (const wchar_t *newVal)
+{
+    Imp->AppendText(newVal);
+}
+void CMTMailw::AppendText (const STD(string) &newVal)
+{
+    Imp->AppendText(newVal.c_str());
+}
+const wchar_t* CMTMailw::GetText (void)
+{
+    return Imp->GetText ();
+}
+const STD(string)& CMTMailw::sGetText ()
+{
+    return Imp->GetTextString();
+}
+
+
+const long CMTMailw::GetTextLength (void)
+{
+    return Imp->GetTextLength ();
+}
+
+void CMTMailw::SetTextFile (const char *newVal, const char *InLocale)
+{
+    Imp->SetTextFile(newVal, InLocale);
+}
+void CMTMailw::SetTextFile (const wchar_t *newVal)
+{
+    Imp->SetTextFile(newVal);
+}
+void CMTMailw::SetTextFile (const STD(string) &newVal)
+{
+    Imp->SetTextFile(newVal.c_str());
+}
+const wchar_t* CMTMailw::GetTextFile (void)
+{
+    return Imp->GetTextFile ();
+}
+const STD(string)& CMTMailw::sGetTextFile ()
+{
+    return Imp->GetTextFileString();
+}
+
+void CMTMailw::SetAttachment (const char *newVal, const char *InLocale)
+{
+    Imp->SetAttachment(newVal, InLocale);
+}
+void CMTMailw::SetAttachment (const wchar_t *newVal)
+{
+    Imp->SetAttachment(newVal);
+}
+void CMTMailw::SetAttachment (const STD(string) &newVal)
+{
+    Imp->SetAttachment(newVal.c_str());
+}
+const wchar_t* CMTMailw::GetAttachment (void)
+{
+    return Imp->GetAttachment ();
+}
+const STD(string)& CMTMailw::sGetAttachment ()
+{
+    return Imp->GetAttachmentString();
+}
+
+
+void CMTMailw::SetCalendar (const char *newVal, const char *InLocale)
+{
+    Imp->SetCalendar(newVal, InLocale);
+}
+void CMTMailw::SetCalendar (const wchar_t *newVal)
+{
+    Imp->SetCalendar(newVal);
+}
+void CMTMailw::SetCalendar (const STD(string) &newVal)
+{
+    Imp->SetCalendar(newVal.c_str());
+}
+const wchar_t* CMTMailw::GetCalendar (void)
+{
+    return Imp->GetCalendar ();
+}
+const STD(string)& CMTMailw::sGetCalendar ()
+{
+    return Imp->GetCalendarString();
+}
+
+
+
+void CMTMailw::SetCalendar (const wchar_t *InMethod,
+                            const wchar_t *InUID,
+                            const wchar_t *InStartTime,
+                            const long    InDuration,
+                            const long    InReminderMinutes,
+                            const wchar_t *InLocation,
+                            const long    InRSVP)
+{
+    Imp->SetCalendar (InMethod, 
+                      InUID, 
+                      InStartTime, 
+                      InDuration, 
+                      InReminderMinutes, 
+                      InLocation, 
+                      InRSVP,
+                      NULL,
+                      0,
+                      0,
+                      NULL);
+}
+
+void CMTMailw::SetCalendar (const wchar_t *InMethod,
+                            const wchar_t *InUID,
+                            const wchar_t *InStartTime,
+                            const long    InDuration,
+                            const long    InReminderMinutes,
+                            const wchar_t *InLocation,
+                            const long    InRSVP,
+                            const wchar_t *InFreq,
+                            const long     InCount,
+                            const long     InInterval,
+                            const wchar_t  *InByDay)
+{
+    Imp->SetCalendar (InMethod, 
+                      InUID, 
+                      InStartTime, 
+                      InDuration, 
+                      InReminderMinutes, 
+                      InLocation, 
+                      InRSVP,
+                      InFreq,
+                      InCount,
+                      InInterval,
+                      InByDay);
+}
+
+void CMTMailw::Reset (void)
+{
+    Imp->Reset();
+}
+long CMTMailw::Send (void)
+{
+    return Imp->Send ();
+}
+
+
+long CMTMailw::Send (const char *InTo,
+                     const char *InFrom,
+                     const char *InText,
+                     const char *InSubject,
+                     const char *InCC,
+                     const char *InBCC,
+                     const char *InAttachments,
+                     const char *InTextFile, 
+                     const char *InLocale)
+{
+    return Imp->Send (InTo,
+                      InFrom,
+                      InText,
+                      InSubject,
+                      InCC,
+                      InBCC,
+                      InAttachments,
+                      InTextFile,
+                      InLocale);
+}
+long CMTMailw::Send (const wchar_t *InTo,
+                     const wchar_t *InFrom,
+                     const wchar_t *InText,
+                     const wchar_t *InSubject,
+                     const wchar_t *InCC,
+                     const wchar_t *InBCC,
+                     const wchar_t *InAttachments,
+                     const wchar_t *InTextFile)
+{
+    return Imp->Send (InTo,
+                      InFrom,
+                      InText,
+                      InSubject,
+                      InCC,
+                      InBCC,
+                      InAttachments,
+                      InTextFile);
+}
+long CMTMailw::Send (const STD(string) &InTo,
+                     const STD(string) &InFrom,
+                     const STD(string) &InText,
+                     const STD(string) &InSubject,
+                     const STD(string) &InCC,
+                     const STD(string) &InBCC,
+                     const STD(string) &InAttachments,
+                     const STD(string) &InTextFile)
+{
+    return Imp->Send (InTo.c_str(),
+                      InFrom.c_str(),
+                      InText.c_str(),
+                      InSubject.c_str(),
+                      InCC.c_str(),
+                      InBCC.c_str(),
+                      InAttachments.c_str(),
+                      InTextFile.c_str());
+}
+long CMTMailw::GetStatusCode (void) const
+{
+    return Imp->GetStatusCode();
+}
+const wchar_t* CMTMailw::GetStatusText (void) const
+{
+    return Imp->GetStatusText();
+}
+const STD(string)& CMTMailw::sGetStatusText ()
+{
+    return Imp->GetStatusTextString();
+}
+
+void CMTMailw::SetTextHTML (const long newVal)
+{
+    Imp->SetTextHTML(newVal);
+}
+const long CMTMailw::GetTextHTML()
+{
+    return Imp->GetTextHTML();
+}
+void CMTMailw::SetConfidential (const long newVal)
+{
+    Imp->SetConfidential(newVal);
+}
+const long CMTMailw::GetConfidential()
+{
+    return Imp->GetConfidential();
+}
+void CMTMailw::SetPrivate (const long newVal)
+{
+    Imp->SetPrivate(newVal);
+}
+const long CMTMailw::GetPrivate()
+{
+    return Imp->GetPrivate();
+}
+void CMTMailw::SetServer (const char *newVal, const char *InLocale)
+{
+    Imp->SetServer(newVal, InLocale);
+}
+void CMTMailw::SetServer (const wchar_t *newVal)
+{
+    Imp->SetServer (newVal);
+}
+void CMTMailw::SetServer (const STD(string) &newVal)
+{
+    Imp->SetServer (newVal.c_str());
+}
+void CMTMailw::SetCharset (const char *newVal)
+{
+    Imp->SetCharset(newVal);
+}
+void CMTMailw::SetCharset (const wchar_t *newVal)
+{
+    Imp->SetCharset(newVal);
+}
+void CMTMailw::SetCharset (const STD(string) &newVal)
+{
+    Imp->SetCharset(newVal.c_str());
+}
+long CMTMailw::Connect (const wchar_t *InServer)
+{
+    return Imp->Connect(InServer);
+}
+long CMTMailw::Disconnect()
+{
+    return Imp->Disconnect();
+}
+
+END_NAMESPACE
+
+
+#ifdef _MANAGED
+
+#include <vcclr.h>
+
+using namespace System;
+
+namespace Micron
+{
+    namespace Messaging
+    {
+        public __gc class Mail
+        {
+        public:
+            Mail ()
+            {
+                mImp = new mti::CMTMailImp;
+            }
+            Mail (String *InTo,
+                  String *InFrom,
+                  String *InText,
+                  String *InSubject,
+                  String *InCC,
+                  String *InBCC,
+                  String *InAttachment, 
+                  String *InTextFile)
+            {
+                const wchar_t __pin* strTo = PtrToStringChars(InTo);
+                const wchar_t __pin* strFrom = PtrToStringChars(InFrom);
+                const wchar_t __pin* strText = PtrToStringChars(InText);
+                const wchar_t __pin* strSubject = PtrToStringChars(InSubject);
+                const wchar_t __pin* strCC = PtrToStringChars(InCC);
+                const wchar_t __pin* strBCC = PtrToStringChars(InBCC);
+                const wchar_t __pin* strAttachment = PtrToStringChars(InAttachment);
+                const wchar_t __pin* strTextFile = PtrToStringChars(InTextFile);
+
+                mImp = new mti::CMTMailImp;
+
+                mImp->Send (strTo, 
+                            strFrom, 
+                            strText, 
+                            strSubject, 
+                            strCC, 
+                            strBCC, 
+                            strAttachment, 
+                            strTextFile);
+            }
+            ~Mail()
+            {
+                delete mImp;
+            }
+
+            __property void set_From (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->SetFrom(str);
+            }
+            __property String __gc* get_From() 
+            { 
+                return mImp->GetFrom(); 
+            }
+
+            __property void set_To (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->SetTo(str);
+            }
+            __property String __gc* get_To() 
+            { 
+                return mImp->GetTo(); 
+            }
+            __property void set_AppendTo (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->AppendTo(str);
+            }
+
+            __property void set_CC (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->SetCC(str);
+            }
+            __property String __gc* get_CC() 
+            { 
+                return mImp->GetCC(); 
+            }
+            __property void set_AppendCC (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->AppendCC(str);
+            }
+
+            __property void set_BCC (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->SetBCC(str);
+            }
+            __property String __gc* get_BCC() 
+            { 
+                return mImp->GetBCC(); 
+            }
+            __property void set_AppendBCC (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->AppendBCC(str);
+            }
+
+            __property void set_Subject (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->SetSubject(str);
+            }
+            __property String __gc* get_Subject() 
+            { 
+                return mImp->GetSubject(); 
+            }
+
+            __property void set_Text (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->SetText(str);
+            }
+            __property String __gc* get_Text() 
+            { 
+                return mImp->GetText(); 
+            }
+            __property void set_AppendText (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->AppendText(str);
+            }
+
+            __property void set_TextFile (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->SetTextFile(str);
+            }
+            __property String __gc* get_TextFile() 
+            { 
+                return mImp->GetTextFile(); 
+            }
+
+            __property void set_Attachment (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->SetAttachment(str);
+            }
+            __property String __gc* get_Attachment() 
+            { 
+                return mImp->GetAttachment(); 
+            }
+
+            
+
+            __property void set_SmtpServer (String* InStr ) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->SetServer(str);
+            }
+
+            __property void set_TextHTML (bool bFlag ) 
+            { 
+                mImp->SetTextHTML(bFlag);
+            }
+            __property bool get_TextHTML()
+            {
+                return ( mImp->GetTextHTML() != 0 );
+            }
+
+            __property void set_Confidential (bool bFlag ) 
+            { 
+                mImp->SetConfidential(bFlag);
+            }
+            __property bool get_Confidential()
+            {
+                return ( mImp->GetConfidential() != 0 );
+            }
+
+            __property void set_Private (bool bFlag ) 
+            { 
+                mImp->SetPrivate(bFlag);
+            }
+            __property bool get_Private()
+            {
+                return ( mImp->GetPrivate() != 0 );
+            }
+
+
+            __property String __gc* get_StatusText() 
+            { 
+                return mImp->GetStatusText(); 
+            }
+            __property long get_StatusCode()
+            {
+                return mImp->GetStatusCode();
+            }
+
+
+
+			__property void set_Calendar (String* InStr) 
+            { 
+                const wchar_t __pin* str = PtrToStringChars(InStr); 
+                mImp->SetCalendar(str);
+            }
+            __property String __gc* get_Calendar() 
+            { 
+                return mImp->GetCalendar(); 
+            }
+
+
+			__property void set_Calendar (String* InMethod,
+										  String* InUID,
+										  String* InStartTime,
+										  long    InDuration,
+										  long    InReminderMinutes,
+										  String* InLocation,
+										  long    InRSVP) 
+            { 
+                const wchar_t __pin* strMethod = PtrToStringChars(InMethod);
+				const wchar_t __pin* strUID = PtrToStringChars(InUID); 
+				const wchar_t __pin* strStartTime = PtrToStringChars(InStartTime); 
+				const wchar_t __pin* strLocation = PtrToStringChars(InLocation); 
+                
+				mImp->SetCalendar(strMethod, 
+					              strUID, 
+								  strStartTime, 
+								  InDuration, 
+								  InReminderMinutes, 
+								  strLocation, 
+								  InRSVP,
+								  NULL,
+								  0,
+								  0,
+								  NULL);
+            }
+
+			__property void set_Calendar (String* InMethod,
+										  String* InUID,
+										  String* InStartTime,
+										  long    InDuration,
+										  long    InReminderMinutes,
+										  String* InLocation,
+										  long    InRSVP,
+										  String* InFreq,
+                                          long    InCount,
+                                          long    InInterval,
+                                          String* InByDay) 
+            { 
+                const wchar_t __pin* strMethod = PtrToStringChars(InMethod);
+				const wchar_t __pin* strUID = PtrToStringChars(InUID); 
+				const wchar_t __pin* strStartTime = PtrToStringChars(InStartTime); 
+				const wchar_t __pin* strLocation = PtrToStringChars(InLocation); 
+                const wchar_t __pin* strFreq = PtrToStringChars(InFreq); 
+                const wchar_t __pin* strByDay = PtrToStringChars(InByDay); 
+                
+				mImp->SetCalendar(strMethod, 
+					              strUID, 
+								  strStartTime, 
+								  InDuration, 
+								  InReminderMinutes, 
+								  strLocation, 
+								  InRSVP,
+								  strFreq,
+								  InCount,
+								  InInterval,
+								  strByDay);
+            }
+
+
+
+            bool Send () 
+            {
+                return ( mImp->Send() != 0 );
+            }
+
+            bool Send (String *InTo, 
+                       String *InFrom, 
+                       String *InText, 
+                       String *InSubject) 
+            {
+                const wchar_t __pin* strTo = PtrToStringChars(InTo);
+                const wchar_t __pin* strFrom = PtrToStringChars(InFrom);
+                const wchar_t __pin* strText = PtrToStringChars(InText);
+                const wchar_t __pin* strSubject = PtrToStringChars(InSubject);
+
+                return ( mImp->Send (strTo, 
+                                     strFrom, 
+                                     strText, 
+                                     strSubject, 
+                                     L"", 
+                                     L"", 
+                                     L"", 
+                                     L"") != 0 );
+            }
+
+            bool Send (String *InTo, 
+                       String *InFrom, 
+                       String *InText, 
+                       String *InSubject, 
+                       String *InCC) 
+            {
+                const wchar_t __pin* strTo = PtrToStringChars(InTo);
+                const wchar_t __pin* strFrom = PtrToStringChars(InFrom);
+                const wchar_t __pin* strText = PtrToStringChars(InText);
+                const wchar_t __pin* strSubject = PtrToStringChars(InSubject);
+                const wchar_t __pin* strCC = PtrToStringChars(InCC);
+
+                return ( mImp->Send (strTo, 
+                                     strFrom, 
+                                     strText, 
+                                     strSubject, 
+                                     strCC, 
+                                     L"", 
+                                     L"", 
+                                     L"") != 0 );
+            }
+
+            bool Send (String *InTo, 
+                       String *InFrom, 
+                       String *InText, 
+                       String *InSubject, 
+                       String *InCC, 
+                       String *InBCC) 
+            {
+                const wchar_t __pin* strTo = PtrToStringChars(InTo);
+                const wchar_t __pin* strFrom = PtrToStringChars(InFrom);
+                const wchar_t __pin* strText = PtrToStringChars(InText);
+                const wchar_t __pin* strSubject = PtrToStringChars(InSubject);
+                const wchar_t __pin* strCC = PtrToStringChars(InCC);
+                const wchar_t __pin* strBCC = PtrToStringChars(InBCC);
+
+                return ( mImp->Send (strTo, 
+                                     strFrom, 
+                                     strText, 
+                                     strSubject, 
+                                     strCC, 
+                                     strBCC, 
+                                     L"", 
+                                     L"") != 0 );
+            }
+
+            bool Send (String *InTo, 
+                       String *InFrom, 
+                       String *InText, 
+                       String *InSubject, 
+                       String *InCC, 
+                       String *InBCC,
+                       String *InAttachment) 
+            {
+                const wchar_t __pin* strTo = PtrToStringChars(InTo);
+                const wchar_t __pin* strFrom = PtrToStringChars(InFrom);
+                const wchar_t __pin* strText = PtrToStringChars(InText);
+                const wchar_t __pin* strSubject = PtrToStringChars(InSubject);
+                const wchar_t __pin* strCC = PtrToStringChars(InCC);
+                const wchar_t __pin* strBCC = PtrToStringChars(InBCC);
+                const wchar_t __pin* strAttachment = PtrToStringChars(InAttachment);
+
+                return ( mImp->Send (strTo, 
+                                     strFrom, 
+                                     strText, 
+                                     strSubject, 
+                                     strCC, 
+                                     strBCC, 
+                                     strAttachment, 
+                                     L"") != 0);
+            }
+
+
+            bool Send (String *InTo,
+                       String *InFrom,
+                       String *InText,
+                       String *InSubject,
+                       String *InCC,
+                       String *InBCC,
+                       String *InAttachment,
+                       String *InTextFile)
+            {
+                const wchar_t __pin* strTo = PtrToStringChars(InTo);
+                const wchar_t __pin* strFrom = PtrToStringChars(InFrom);
+                const wchar_t __pin* strText = PtrToStringChars(InText);
+                const wchar_t __pin* strSubject = PtrToStringChars(InSubject);
+                const wchar_t __pin* strCC = PtrToStringChars(InCC);
+                const wchar_t __pin* strBCC = PtrToStringChars(InBCC);
+                const wchar_t __pin* strAttachment = PtrToStringChars(InAttachment);
+                const wchar_t __pin* strTextFile = PtrToStringChars(InTextFile);
+
+                return (mImp->Send (strTo, 
+                                  strFrom, 
+                                  strText, 
+                                  strSubject, 
+                                  strCC, 
+                                  strBCC, 
+                                  strAttachment, 
+                                  strTextFile) != 0);
+            }
+
+            void Reset ()
+            {
+                mImp->Reset();
+            }
+
+            long Connect ()
+            {
+                return mImp->Connect(L"");
+            }
+            long Connect (String *SmtpServer)
+            {
+                const wchar_t __pin* strSmtpServer = PtrToStringChars(SmtpServer);
+                return mImp->Connect(strSmtpServer);
+            }
+            long Disconnect ()
+            {
+                return mImp->Disconnect();
+            }
+        private:
+            mti::CMTMailImp *mImp;
+        };
+    }
+}
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*******************************************************************************
 **              <Standard Micron Copyright Information>
 **
