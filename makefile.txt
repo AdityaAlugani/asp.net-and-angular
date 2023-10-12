@@ -1,3 +1,283 @@
+/*******************************************************************************
+**              <Standard Micron Copyright Information>
+**
+** Copyright 1999 Micron Technology, Inc. All Rights Reserved.
+** Unpublished all rights reserved under the copyright laws of
+** the United States. USE OF A COPYRIGHT NOTICE IS PRECAUTIONARY
+** ONLY AND DOES NOT IMPLY PUBLICATION OR DISCLOSURE.
+**
+** THIS SOFTWARE CONTAINS CONFIDENTIAL INFORMATION AND
+** TRADE SECRETS OF MICRON TECHNOLOGY, INC. USE, DISCLOSURE,
+** OR REPRODUCTION IS PROHIBITED WITHOUT THE PRIOR EXPRESS
+** WRITTEN PERMISSION OF MICRON TECHNOLOGY, INC.
+*******************************************************************************/
+/***********************************************************************
+**
+** CMTMailw.hpp                                              30-APR-1998
+**
+** Purpose: Prototype for MTMailw object class.
+**
+** MODIFICATION:
+**
+** DATE         PROGRAMMER           HISTORY
+** --------     ---------------     ------------------------------------------------------
+** 10/29/02     JFERGUSON           Added wide character class. 
+**                                  Modified Implementation class to use the namespace 'mti'. 
+**                                  Removed the 'USING_NAMESPACE(std)' line.
+**
+************************************************************************/
+
+#ifndef __CMTMailw_H__
+#define __CMTMailw_H__
+
+#include <string> 
+#include "rtldll.h"
+#include "namespace.h"
+#include "mtdattyp.h"
+
+BEGIN_NAMESPACE(mti)
+
+class CMTMailImp;           // Implentation class
+
+class DllExport CMTMailw     //  Wide character Wrapper class (Exported)
+{
+public:
+
+    CMTMailw (void);
+
+    CMTMailw (const char *InTo,
+              const char *InFrom = "",
+              const char *InText = "",
+              const char *InSubject = "",
+              const char *InCC = "",
+              const char *InBCC = "",
+              const char *InAttachment = "",
+              const char *InTextFile = "", 
+              const char *InLocale = "");
+
+    CMTMailw (const wchar_t *InTo,
+              const wchar_t *InFrom = L"",
+              const wchar_t *InText = L"",
+              const wchar_t *InSubject = L"",
+              const wchar_t *InCC = L"",
+              const wchar_t *InBCC = L"",
+              const wchar_t *InAttachment = L"",
+              const wchar_t *InTextFile = L"");
+
+    CMTMailw (const STD(string) &InTo,
+              const STD(string) &InFrom = "",
+              const STD(string) &InText = "",
+              const STD(string) &InSubject = "",
+              const STD(string) &InCC = "",
+              const STD(string) &InBCC = "",
+              const STD(string) &InAttachment = "",
+              const STD(string) &InTextFile = "");
+
+    CMTMailw (const CMTMailw &Mail);
+    CMTMailw &operator= (const CMTMailw &Mail);
+    ~CMTMailw (void);
+
+    void SetFrom (const char *InAddress, const char *InLocale = "");
+    void SetFrom (const wchar_t *InAddress);
+    void SetFrom (const STD(string)& InAddress);
+
+    const wchar_t* GetFrom ();
+    const STD(string)& sGetFrom(void);
+
+    void SetTo   (const char *InAddress, const char *InLocale = "");
+    void SetTo   (const wchar_t *InAddress);
+    void SetTo   (const STD(string)& InAddress);
+
+    void AppendTo   (const char *InAddress, const char *InLocale = "");
+    void AppendTo   (const wchar_t *InAddress);
+    void AppendTo   (const STD(string)& InAddress);
+
+    const wchar_t* GetTo ();
+    const STD(string)& sGetTo(void);
+
+    void SetCC   (const char *InAddress, const char *InLocale = "");
+    void SetCC   (const wchar_t *InAddress);
+    void SetCC   (const STD(string)& InAddress);
+
+    void AppendCC   (const char *InAddress, const char *InLocale = "");
+    void AppendCC   (const wchar_t *InAddress);
+    void AppendCC   (const STD(string)& InAddress);
+
+    const wchar_t* GetCC ();
+    const STD(string)& sGetCC(void);
+
+    void SetBCC  (const char *InAddress, const char *InLocale = "");
+    void SetBCC  (const wchar_t *InAddress);
+    void SetBCC  (const STD(string)& InAddress);
+
+    void AppendBCC   (const char *InAddress, const char *InLocale = "");
+    void AppendBCC   (const wchar_t *InAddress);
+    void AppendBCC   (const STD(string)& InAddress);
+
+    const wchar_t* GetBCC ();
+    const STD(string)& sGetBCC(void);
+
+    void SetSubject (const char *InSubject, const char *InLocale = "");
+    void SetSubject (const wchar_t *InSubject);
+    void SetSubject (const STD(string)& InSubject);
+
+    const wchar_t* GetSubject ();
+    const STD(string)& sGetSubject(void);
+
+    void SetText    (const char *InText, const char *InLocale = "");
+    void SetText    (const wchar_t *InText);
+    void SetText    (const STD(string)& InText);
+
+    void AppendText (const char *InText, const char *InLocale = "");
+    void AppendText (const wchar_t *InText);
+    void AppendText (const STD(string)& InText);
+
+
+    const wchar_t* GetText ();
+    const STD(string)& sGetText(void);
+    const long GetTextLength ();
+
+    void SetTextFile (const char *InFilename, const char *InLocale = "");
+    void SetTextFile (const wchar_t *InFilename);
+    void SetTextFile (const STD(string)& InFilename);
+
+    const wchar_t* GetTextFile ();
+    const STD(string)& sGetTextFile(void);
+
+    void SetAttachment  (const char *InFilename, const char *InLocale = "");
+    void SetAttachment  (const wchar_t *InFilename);
+    void SetAttachment  (const STD(string)& InFilename);
+
+
+    const wchar_t* GetAttachment ();
+    const STD(string)& sGetAttachment(void);
+
+
+    void SetCalendar  (const char *InCalendar, const char *InLocale = "");
+    void SetCalendar  (const wchar_t *InCalendar);
+    void SetCalendar  (const STD(string)& InCalendar);
+
+    const wchar_t* GetCalendar ();
+    const STD(string)& sGetCalendar(void);
+
+
+    void SetCalendar (const wchar_t *InMethod,
+                      const wchar_t *InUID,
+                      const wchar_t *InStartTime,
+                      const long    InDuration,
+                      const long    InReminderMinutes,
+                      const wchar_t *InLocation,
+                      const long    InRSVP);
+
+
+    void SetCalendar (const wchar_t *InMethod,
+                      const wchar_t *InUID,
+                      const wchar_t *InStartTime,
+                      const long    InDuration,
+                      const long    InReminderMinutes,
+                      const wchar_t *InLocation,
+                      const long    InRSVP,
+                      const wchar_t *InFreq,
+                      const long     InCount,
+                      const long     InInterval,
+                      const wchar_t  *InByDay = L"");
+
+
+    
+
+    void Reset (void);
+
+    long Send (void);
+
+    long Send (const char *InTo,
+               const char *InFrom = "",
+               const char *InText = "",
+               const char *InSubject = "",
+               const char *InCC = "",
+               const char *InBCC = "",
+               const char *InAttachment = "",
+               const char *InTextFile = "", 
+               const char *InLocale = "");
+
+    long Send (const wchar_t *InTo,
+               const wchar_t *InFrom = L"",
+               const wchar_t *InText = L"",
+               const wchar_t *InSubject = L"",
+               const wchar_t *InCC = L"",
+               const wchar_t *InBCC = L"",
+               const wchar_t *InAttachment = L"",
+               const wchar_t *InTextFile = L"");
+
+    long Send (const STD(string)& InTo,
+               const STD(string)& InFrom = "",
+               const STD(string)& InText = "",
+               const STD(string)& InSubject = "",
+               const STD(string)& InCC = "",
+               const STD(string)& InBCC = "",
+               const STD(string)& InAttachment = "",
+               const STD(string)& InTextFile = "");
+
+    long GetStatusCode (void) const;
+    const wchar_t* GetStatusText (void) const;
+    const STD(string)& sGetStatusText(void);
+
+    void SetTextHTML (const long bHTML);
+    const long GetTextHTML();
+
+    void SetServer (const char *InHostName, const char *InLocale = "");
+    void SetServer (const wchar_t *InHostName);
+    void SetServer (const STD(string)& InHostName);
+
+    void SetConfidential (const long newVal);
+    const long GetConfidential();
+
+    void SetPrivate (const long newVal);
+    const long GetPrivate();
+    
+    void SetCharset (const char *InCharset);
+    void SetCharset (const wchar_t *InCharset);
+    void SetCharset (const STD(string)& InCharset);
+
+    long Connect (const wchar_t *InServer = L"");
+    long Disconnect();
+
+
+
+
+
+private:
+    CMTMailImp *Imp;
+};
+
+END_NAMESPACE
+
+#endif /* __CMTMailw_H__ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Test linking starts ...!!!
 /mu/bin/g++ -o  libmtcrypto_shared_tester src/UnitTests/CMTAESUnitTest.o src/UnitTests/CMTCryptoUnitTest.o src/UnitTests/CMTMD5UnitTest.o src/UnitTests/DesUnitTest.o -pthread -std=c++14 -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib:/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib:/mu/mtsdk/corplib/gcc1131/lib:/home/sysprog/libraries/build/gcc1131-rhel9/libmtcrypto_static -L/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib -L/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib -L/mu/mtsdk/corplib/gcc1131/lib -L/home/sysprog/libraries/build/gcc1131-rhel9/libmtcrypto_static -L/opt/ADO_Agent02/_work/2/s -lmtcrypto -lcppunit -ldl -lcmtexception
 /usr/bin/ld: src/UnitTests/CMTAESUnitTest.o: in function `CMTAESUnitTest::testCryptoExceptionExtractor()':
