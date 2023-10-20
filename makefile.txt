@@ -1,3 +1,300 @@
+#---------------------------------------------------------------------------#
+#  Makefile created for build and test CORPLIBS(cmtmailpage)
+#  
+#  Created by: mmadhira@micron.com
+#  Date: 28/03/2023
+#---------------------------------------------------------------------------#
+
+#-----------------------------------##
+# Common variables Declration 
+#-----------------------------------##
+
+GCC=/mu/bin/gcc
+CXX=/mu/bin/g++
+TARGET_DEFINITIONS = _REENTRANT NDEBUG _M_DLL
+LIBRARY_NAME = MTMailPage
+LIB_NAME = libmtmailpage
+TEST_TARGET = libmtmailpage_shared_tester
+LINK = -shared
+LNS = ln -s
+LS	= ls -al
+CP	=	cp -a
+CHMOD = chmod 644
+CFLAGS= -fPIC
+CPPFLAGS = -g3 -O2 -fvisibility=hidden -Wno-deprecated-declarations -fPIC
+TEST_CPPFLAGS	= -g3 -O2 -fvisibility=hidden -Wno-deprecated-declarations -fPIC
+TARGET_LDFLAGS = -pthread
+CURR_DIR	=	$(PWD)
+
+# Checking for DEV/MUSYNC environment.
+ifeq ($(HOSTNAME), "bolmusyncprod02.micron.com")
+	CORPBUILD	=	/rhel-9-64-mu-dev/mtapps/corp/
+else
+	CORPBUILD	=	/mu/mtapps/corp/
+endif
+
+SH_FILE	=	CorpLibsReleaseScript.sh
+
+
+#---------------------------------
+# STAGE destination PATH.
+#--------------------------------
+
+INC_DESTINATION	= /home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/include  
+LIB_DESTINATION	= /home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib
+
+#-------------------------------
+# DEV MU destination PATH. 
+#--------------------------------
+
+MU_INC_DEST	= /mu/mtsdk/corplib/gcc1131/include 
+MU_LIB_DEST	= /mu/mtsdk/corplib/gcc1131/lib
+
+#-------------------------------
+# Master MU destination PATH. 
+#-------------------------------- 
+
+DELTA_MU_INC_DEST	= /rhel-9-64-mu-mstr/mtsdk/corplib/gcc1131/include 
+DELTA_MU_LIB_DEST	= /rhel-9-64-mu-mstr/mtsdk/corplib/gcc1131/lib 
+
+
+#-------------------------------------#
+# Shared libraries mtmailpage variables
+#-------------------------------------#
+#RUNTIME_PATH = /mu/mtsdk/corplib/gcc1131/lib:/home/sysprog/libraries/build/gcc1131-rhel9/libcmtexception_static -L.
+#LIBDIRS = /home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib /mu/mtsdk/corplib/gcc1131/lib /home/sysprog/libraries/build/gcc1131-rhel9/libcmtexception_static
+#LIBRARIES = 
+
+#SHARED_LIBS = -Wl,--enable-new-dtags -Wl,-rpath,$(RUNTIME_PATH) $(addprefix -L,$(LIBDIRS)) $(addprefix -l,$(LIBRARIES))
+#INCS += /mu/mtsdk/corplib/gcc1131/include ~/IOSS-lib-MTMailPageRHEL9-LinuxTEST
+
+#----------------------------------------#
+# test libraries variables
+#----------------------------------------#
+
+TEST_RUNTIIME_PATH	= /mu/dev/corplib/cppunit/1.15.2-gcc1131-rhel9-64/lib:/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib:/mu/mtsdk/corplib/gcc1131/lib:~/IOSS-lib-MTMailPageRHEL9-LinuxTEST:~/IOSS-lib-MTMailPageRHEL9-LinuxTEST/libMTMailPage.so
+
+TEST_LIBDIRS	=	/mu/dev/corplib/cppunit/1.15.2-gcc1131-rhel9-64/lib \
+					/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib \
+					/mu/mtsdk/corplib/gcc1131/lib \
+					~/IOSS-lib-MTMailPageRHEL9-LinuxTEST \
+					~/IOSS-lib-MTMailPageRHEL9-LinuxTEST/libMTMailPage.so \
+
+TEST_LIBRARIES	= MTMailPage cppunit
+
+TEST_SHARED_LIBS = -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,$(TEST_RUNTIIME_PATH) $(addprefix -L,$(TEST_LIBDIRS)) $(addprefix -l,$(TEST_LIBRARIES))
+
+TEST_INCS =	/mu/dev/corplib/cppunit/1.15.2-gcc1131-rhel9-64/include \
+			/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/include \
+			/mu/mtsdk/corplib/gcc1131/include \
+			~/IOSS-lib-MTMailPageRHEL9-LinuxTEST \
+
+
+#--------------#
+# Sorce files
+#--------------#
+
+CPPSRC_FILES = cmtmailw.cpp cmtpagew.cpp mtmailpage.cpp
+
+#------------------#
+#header files:
+#------------------#
+
+DEPLOYABLE_HEADERS = cmtmailw.h cmtpagew.h
+NON_DEPLOYABLE_HEADERS = mtmailpage.h
+
+#-------------------#
+#Test source files
+#------------------#
+
+TEST_SRCS = mailpagetest/mailpagetest.cpp #pagetest/pagetest.cpp mailtest/mailtest.cpp
+
+#------------------#
+# Test header files:
+#------------------#
+
+TEST_HDRS = ../cmtmailw.h ../cmtpagew.h ../mtmailpage.h
+
+TEST_DEFINITIONS = _REENTRANT NDEBUG _M_DLL
+
+
+TEST_LIBS = 
+
+#-----------------------------------#
+# Version tag updation for CORPLIB
+#-----------------------------------#
+
+ifeq ($(strip $(RELEASE)),)
+override LIB_EXT := dev
+else
+	ifneq (,$(findstring _,$(RELEASE)))
+		RELEASE_TEMP := $(RELEASE)
+		ifneq (,$(findstring /,$(RELEASE_TEMP)))
+			RELEASE_TEMP := $(shell echo $(RELEASE_TEMP) | awk -F\/ '{print $$1}')
+		endif
+			override LIB_EXT := $(shell echo $(RELEASE_TEMP) | awk -F\_ '{print $$2}')
+	else
+		override LIB_EXT := $(RELEASE)
+	endif
+endif
+
+override LIB_NAME          := lib$(LIBRARY_NAME)
+override SHARED_LIB        := $(LIB_NAME).so.$(LIB_EXT)
+
+#-----------------------------------------#
+# Make all libs
+#-----------------------------------------#
+.PHONY: all 
+all: build depends 
+
+#----------------------------------------#
+#Builing shared object (.so) for CORPLIB:
+#----------------------------------------#
+
+
+COBJS = $(CSRC_FILES:%.c=%.o )
+CPPOBJS = $(CPPSRC_FILES:%.cpp=%.o )
+
+OBJS = $(COBJS)  $(CPPOBJS)
+
+build: $(OBJS)
+	$(RM) *.so.*
+	$(CXX) $(LINK) -o $(SHARED_LIB) $(OBJS) $(TARGET_LDFLAGS) $(SHARED_LIBS) 
+	$(LNS) $(SHARED_LIB) libMTMailPage.so  
+
+#---------------------------------#
+#Building object filed (.o) files:
+#---------------------------------#
+
+$(COBJS):%.o :%.c
+	@echo "COBJS compilation starts..."
+	$(GCC) -c $(CPPFLAGS) $(addprefix -D,$(TARGET_DEFINITIONS)) $(addprefix -I,$(INCS)) -o $@ $<
+	@echo "COBJS compilation completed"
+
+$(CPPOBJS):%.o :%.cpp
+	@echo "CORPLIB compilation starts..."
+	$(CXX) -c $(CPPFLAGS) $(addprefix -D,$(TARGET_DEFINITIONS)) $(addprefix -I,$(INCS)) -o $@ $<
+	@echo "CORPLIB compilation completed"
+
+#--------------------------------------#
+#Building shared object (.so) for test
+#--------------------------------------#
+TEST_OBJS= $(TEST_SRCS:%.cpp=%.o)
+
+.PHONY: depends 
+depends: $(TEST_OBJS)
+	@echo "Test linking starts ...!!!"
+	$(CXX) -o  $(TEST_TARGET) $(TEST_OBJS) $(TARGET_LDFLAGS) $(TEST_SHARED_LIBS)
+	@echo "Test linking completed"
+	@echo "Please use make test to run test-case"
+
+#------------------------------------------#
+#Building object filed (.o) files for test
+#------------------------------------------#
+
+$(TEST_OBJS): %.o :%.cpp
+	@echo "test compilation starts "
+	$(CXX) -c $(TEST_CPPFLAGS) $(addprefix -D,$(TEST_DEFINITIONS)) $(addprefix -I,$(TEST_INCS)) -o $@ $<
+	@echo "test compilation completed"
+
+#.SILENT:TEST_SC
+.PHONY:TEST_SC
+TEST_SC:
+		#@echo " TEST_SC --> $(LIB_NAME).so"
+		@echo " TEST_SC --> $(SHARED_LIB)--->$(LIB_EXT)"
+
+#--------------------------------#
+# clean the libraries:
+#--------------------------------#
+
+clean:
+	@echo " clean starts..."
+	$(RM) $(SHARED_LIB)
+	$(RM) $(TEST_TARGET)
+	$(RM) *.so* 
+	$(RM) *.o
+
+#-----------------------------#
+# Running test-case
+#----------------------------#
+test:
+	@echo "running test case!!!"
+	./$(TEST_TARGET)
+
+
+#---------------------------------#
+# Make install:
+# copy header & library to Stage 
+#---------------------------------#
+
+.SILENT: install 
+install: 
+		$(CORPBUILD)/$(SH_FILE) stgLibPath $(LIB_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB) 
+		$(CORPBUILD)/$(SH_FILE) stgIncPath $(INC_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) deployHeaderList $(DEPLOYABLE_HEADERS)
+		$(CORPBUILD)/$(SH_FILE) cpHdr_to_stage $(DEPLOYABLE_HEADERS) $(CURR_DIR) $(INC_DESTINATION) 
+		$(CORPBUILD)/$(SH_FILE) hdrFilePermission_stg $(DEPLOYABLE_HEADERS) $(INC_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) cpLib_to_stage $(SHARED_LIB) $(CURR_DIR) $(LIB_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) linkingLib_stg $(LIB_DESTINATION) $(SHARED_LIB) $(LIB_NAME).so
+
+#---------------------------------#
+# Make stage_promote: 
+# copy header & library to Dev Mu
+# --------------------------------#
+
+.SILENT: stage_promote 
+stage_promote: 
+		$(CORPBUILD)/$(SH_FILE) muLibPath $(LIB_DESTINATION) $(MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB)
+		$(CORPBUILD)/$(SH_FILE) muIncPath $(INC_DESTINATION) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) deployHeaderList $(DEPLOYABLE_HEADERS)
+		$(CORPBUILD)/$(SH_FILE) cpHdr_to_mu $(DEPLOYABLE_HEADERS) $(INC_DESTINATION) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) hdrFilePermission_mu $(DEPLOYABLE_HEADERS) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) cpLib_to_mu $(SHARED_LIB) $(LIB_DESTINATION) $(MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) linkingLib_mu $(MU_LIB_DEST) $(SHARED_LIB) $(LIB_NAME).so
+
+#------------------------------------#
+# Make delta_promote:
+# copy header & library to Master Mu
+# -----------------------------------#
+
+.SILENT: delta_promote 
+delta_promote: 
+		$(CORPBUILD)/$(SH_FILE) muLibPath $(LIB_DESTINATION) $(DELTA_MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB)
+		$(CORPBUILD)/$(SH_FILE) muIncPath $(INC_DESTINATION) $(DELTA_MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) deployHeaderList $(DEPLOYABLE_HEADERS)
+		$(CORPBUILD)/$(SH_FILE) cpHdr_to_mu $(DEPLOYABLE_HEADERS) $(INC_DESTINATION) $(DELTA_MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) hdrFilePermission_mu $(DEPLOYABLE_HEADERS) $(DELTA_MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) cpLib_to_mu $(SHARED_LIB) $(LIB_DESTINATION) $(DELTA_MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) linkingLib_mu $(DELTA_MU_LIB_DEST) $(SHARED_LIB) $(LIB_NAME).so
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const  char    mbsSJISKanji[29] = {0x83, 0x65, 0x83, 0x58, 0x83, 0x67, 0x82, 0xc5, 0x82, 0xb7, 
                                     0x81, 0x42, 0x96, 0xb3, 0x8e, 0x8b, 0x82, 0xb5, 0x82, 0xc4, 
                                     0x82, 0xad, 0x82, 0xbe, 0x82, 0xb3, 0x82, 0xa2, 0x00};
