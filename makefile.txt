@@ -1,3 +1,4044 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#if !defined(XALANAUTOPTR_HEADER_GUARD_1357924680)
+#define XALANAUTOPTR_HEADER_GUARD_1357924680
+
+
+
+// Base include file.  Must be first.
+#include <xalanc/PlatformSupport/PlatformSupportDefinitions.hpp>
+
+
+
+#include <cstddef>
+
+
+
+XALAN_CPP_NAMESPACE_BEGIN
+
+
+
+// We're using our own auto_ptr-like class due to wide
+// variations amongst the varous platforms we have to
+// support
+template<class Type>
+class XalanAutoPtr
+{
+public:
+
+    XalanAutoPtr(Type*  thePointer = 0) :
+        m_pointer(thePointer)
+    {
+    }
+
+    XalanAutoPtr(const XalanAutoPtr<Type>&  theSource) :
+        m_pointer(const_cast<XalanAutoPtr<Type>&>(theSource).release())
+    {
+    }
+
+    XalanAutoPtr<Type>&
+    operator=(XalanAutoPtr<Type>&   theRHS)
+    {
+        if (this != &theRHS)
+        {
+            // This test ought not to be necessary, but
+            // MSVC 6.0 calls delete, which checks for 0.
+            // The problem with that is the locking is
+            // extremely expensive.
+            if (m_pointer != 0)
+            {
+                delete m_pointer;
+            }
+
+            m_pointer = theRHS.release();
+        }
+
+        return *this;
+    }
+
+    ~XalanAutoPtr()
+    {
+        // See note in operator=() about this...
+        if (m_pointer != 0)
+        {
+            delete m_pointer;
+        }
+    }
+
+    Type&
+    operator*() const
+    {
+        return *m_pointer;
+    }
+
+    Type*
+    operator->() const
+    {
+        return m_pointer;
+    }
+
+    Type*
+    get() const
+    {
+        return m_pointer;
+    }
+
+    Type*
+    release()
+    {
+        Type* const temp = m_pointer;
+
+        m_pointer = 0;
+
+        return temp;
+    }
+
+    void
+    reset(Type*     thePointer = 0)
+    {
+        // See note in operator=() about this...
+        if (m_pointer != 0)
+        {
+            delete m_pointer;
+        }
+
+        m_pointer = thePointer;
+    }
+
+private:
+
+    Type*   m_pointer;
+};
+
+
+
+// A class similar to XalanAutoPtr, but for arrays.
+template<class Type>
+class XalanArrayAutoPtr
+{
+public:
+
+    XalanArrayAutoPtr(Type*     thePointer = 0) :
+        m_pointer(thePointer)
+    {
+    }
+
+    XalanArrayAutoPtr(const XalanArrayAutoPtr<Type>&    theSource) :
+        m_pointer(((XalanArrayAutoPtr<Type>&)theSource).release())
+    {
+    }
+
+    XalanArrayAutoPtr<Type>&
+    operator=(XalanArrayAutoPtr<Type>&  theRHS)
+    {
+        if (this != &theRHS)
+        {
+            // This test ought not to be necessary, but
+            // MSVC 6.0 calls delete, which checks for 0.
+            // The problem with that is the locking is
+            // extremely expensive.
+            if (m_pointer != 0)
+            {
+                delete [] m_pointer;
+            }
+
+            m_pointer = theRHS.release();
+        }
+
+        return *this;
+    }
+
+    ~XalanArrayAutoPtr()
+    {
+        // See note in operator=() about this...
+        if (m_pointer != 0)
+        {
+            delete [] m_pointer;
+        }
+    }
+
+    Type&
+    operator*() const
+    {
+        return *m_pointer;
+    }
+
+    Type&
+#if defined(XALAN_STRICT_ANSI_HEADERS)
+    operator[](std::size_t  index) const
+#else
+    operator[](size_t   index) const
+#endif
+    {
+        return m_pointer[index];
+    }
+
+    Type*
+    get() const
+    {
+        return m_pointer;
+    }
+
+    Type*
+    release()
+    {
+        Type* const temp = m_pointer;
+
+        m_pointer = 0;
+
+        return temp;
+    }
+
+    void
+    reset(Type*     thePointer = 0)
+    {
+        // See note in operator=() about this...
+        if (m_pointer != 0)
+        {
+            delete [] m_pointer;
+        }
+
+        m_pointer = thePointer;
+    }
+
+private:
+
+    Type*   m_pointer;
+};
+
+
+
+XALAN_CPP_NAMESPACE_END
+
+
+
+#endif  // if !defined(XALANAUTOPTR_HEADER_GUARD_1357924680)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//==============================================================================
+//              <Standard Micron Copyright Information>
+//
+// Copyright 1999 Micron Technology, Inc. All Rights Reserved.
+// Unpublished all rights reserved under the copyright laws of
+// the United States. USE OF A COPYRIGHT NOTICE IS PRECAUTIONARY
+// ONLY AND DOES NOT IMPLY PUBLICATION OR DISCLOSURE.
+//
+// THIS SOFTWARE CONTAINS CONFIDENTIAL INFORMATION AND
+// TRADE SECRETS OF MICRON TECHNOLOGY, INC. USE, DISCLOSURE,
+// OR REPRODUCTION IS PROHIBITED WITHOUT THE PRIOR EXPRESS
+// WRITTEN PERMISSION OF MICRON TECHNOLOGY, INC.
+//==============================================================================
+/*************************************************************************
+**
+** MTPage.cpp                                               3-Jul-1998
+**
+** Purpose: Object class to send text pages
+**
+**************************************************************************/
+
+#if defined (_WIN32)
+#pragma warning (disable : 4786)
+#endif
+
+#include "cmtpagew.h"
+#include "mtmailpage.h"
+
+extern "C"
+{
+#if defined (_WIN32) 
+#   include <windows.h>
+#   include <sys\timeb.h>
+#   include <process.h> 
+//#   include <mipc.h>
+#   pragma warning  (disable : 4267 4244 4996 )
+#endif
+
+#if defined(cygwin)
+#   include <cygwin/in.h>
+#endif
+
+#if defined(unix) || defined(__xlC__) || defined(linux) || defined(cygwin)
+#   include <sys/socket.h>
+#   include <netdb.h>
+#   include <unistd.h>
+#   include <errno.h>
+#   include <sys/timeb.h>
+#   include <strings.h>
+#   include <arpa/inet.h>
+#endif
+
+#if  defined(__DECCXX) || defined(__DECC)
+#   include <socket.h>
+#   include <in.h>
+#   include <netdb.h>
+#   include <errno.h>
+#   include <unixlib.h>
+#   include <unixio.h>
+#endif
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+
+}
+
+
+
+#ifdef __VMS
+#   define WSAGetLastError(p) errno
+#   define WSASetLastError(p)
+#elif defined(unix) || defined(__xlC__) || defined(cygwin)
+#   define WSAGetLastError() errno
+#   define WSASetLastError(p)
+#endif
+
+
+
+#define SNPP_PORT 444
+#define SNPP_HOST "snpp"
+
+
+BEGIN_NAMESPACE(mti)
+
+
+class CMTSnpp
+{
+public:
+
+    CMTSnpp();
+    ~CMTSnpp();
+    CMTSnpp(const CMTSnpp& cSnpp);
+
+    long Connect(const STD(string) &sHost = SNPP_HOST);
+    long Logi(const STD(string) &sFrom, const STD(string) &sPassword = "");
+    long Call(const STD(string) &sCallerID);
+    long Hold(const STD(string) &sAfter);
+    long Mess(const STD(string) &sMessage);
+    long Page(const STD(string) &sPager);
+    long Send();
+    long Rset();
+    long Quit();
+    long Disconnect();
+    const STD(string)& GetStatusText();
+    long Connected();
+
+    /* These were private, but needed directly in the CMTPagerImp class so made public. */
+    long mRecv(char *pzBuffer, const long lBufferSize);
+    long mSend(const STD(string)&sBuffer);
+
+    long StreamReadLine(STD(string)& out_xBuffer, const long& in_lTimeOut);
+    long StreamWrite(const STD(string)& in_xData);
+    long StreamWriteLine(const STD(string)& in_xData);
+
+    static const long m_lINFINITE_WAIT;
+
+private:
+
+    void        mSetStatusText(const STD(string) &InText);
+
+    STD(string) mStatusText;
+    long   mWSAStartup;
+
+
+    /* from CMTIO                                                         */
+    char*               m_zBuffer;
+    char                m_cEOLDelimiter;
+    long                m_lBufferSize;
+    fd_set              m_sRead_FDS;
+    int                 m_iIOHandle;
+    static const long   m_lDefBufSize;
+    STD(string)         m_InvalidUsers;
+
+	char				m_ServerIP[20];
+
+};
+
+const long CMTSnpp::m_lDefBufSize = 8192;
+const long CMTSnpp::m_lINFINITE_WAIT = LONG_MAX;
+
+
+
+class CMTPageImp
+{
+public:
+
+    CMTPageImp();
+    ~CMTPageImp();
+    CMTPageImp &operator=(const CMTPageImp &Page);
+    CMTPageImp(const CMTPageImp &Page);
+
+    void SetTo(const STD(string) &InToList);
+    void AppendTo(const STD(string) &InToList);
+    const STD(string)& GetTo();
+    const wchar_t*     GetTow();
+
+    void SetFrom(const STD(string) &InFrom);
+    const STD(string)& GetFrom();
+    const wchar_t*     GetFromw();
+
+    void SetPageMsg(const STD(string) &Inmessage);
+    const STD(string)& GetPageMsg();
+    const wchar_t*     GetPageMsgw();
+
+    void SetAfter(const STD(string) &InAfter);
+    const STD(string)& GetAfter();
+    const wchar_t*     GetAfterw();
+
+    void SetSystem(const STD(string) &InSystem);
+    const STD(string)& GetSystem();
+    const wchar_t*     GetSystemw();
+
+    void Reset ();
+
+    long Send();
+    long Send(const STD(string) &InToList,
+                   const STD(string) &InMessage = "",
+                   const STD(string) &InFrom    = "",
+                   const STD(string) &InAfter   = "",
+                   const STD(string) &InSystem  = "");
+
+    long Connect(const STD(string) &sHost = "snpp");
+    void Disconnect(void);
+
+    long GetStatusCode();
+    const STD(string)& GetStatusText();
+    const wchar_t*     GetStatusTextw();
+
+    long Lookup(const STD(string)& InxItem, CMTPagerwVect& InOutvPagers);
+    long GetServiceDataFromId(long InlPageSvcId, STD(string)& OutxPageSvcCode, STD(string)& OutxPageSvcDesc);
+    long GetPagerTypeDataFromId(long InlPagerTypeId, STD(string)& OutxPagerTypeCode, STD(string)& OutxPagerTypeDesc);
+    
+private:
+
+    CMTSnpp     mSnpp;
+
+    void        Initialize(void);
+    void        mSetStatusText(const STD(string) &InText);
+
+    long            mStatusCode;
+    STD(string)     mStatusText;
+    wchar_t*        mwStatusText;
+
+    STD(string)     mToList;
+    STD(string)     mMessage;
+    STD(string)     mFrom;
+    STD(string)     mAfter;
+    STD(string)     mSystem;
+
+    wchar_t*        mwToList;
+    wchar_t*        mwMessage;
+    wchar_t*        mwFrom;
+    wchar_t*        mwAfter;
+    wchar_t*        mwSystem;
+
+#if defined (_WIN32)
+    HINSTANCE mhinstLib;
+#endif
+};
+
+
+
+class CMTPagerImp
+{
+public:
+
+    CMTPagerImp();
+    CMTPagerImp(const STD(string)& xEXPNLine);
+
+    CMTPagerImp& operator= (const CMTPagerImp& Pager);
+    CMTPagerImp(const CMTPagerImp& Pager);
+
+    ~CMTPagerImp();
+
+    const wchar_t*      GetStatusCodew(void);
+    const STD(string)&  GetStatusCode(void);
+    const wchar_t*      GetSubscriberNamew(void);
+    const STD(string)&  GetSubscriberName(void);
+    const wchar_t*      GetPagerNumberw(void);
+    const STD(string)&  GetPagerNumber(void);
+    const wchar_t*      GetDeliveryMaskw(void);
+    const STD(string)&  GetDeliveryMask(void);
+    unsigned long       GetContactWorkerNo(void);
+    const wchar_t*      GetAlphaNumericFlagw(void);
+    const STD(string)&  GetAlphaNumericFlag(void);
+    unsigned long       GetMaxMessageSize(void);
+    long                GetGMTOffset(void);
+    long                GetServiceId(void);
+    long                GetPagerTypeId(void);
+    
+    void                PrintPagerData(void);
+
+private:
+    long                mStatusCode;
+    STD(string)         mStatusText;
+    wchar_t*            mwStatusText;
+
+    void                mSetStatusText(const STD(string) &InText);
+    void                Initialize(void);
+
+
+    STD(string)         mxStatusCode;
+    wchar_t*            mwStatusCode;
+    STD(string)         mxSubscriberName;
+    wchar_t*            mwSubscriberName;
+    STD(string)         mxPagerNo;
+    wchar_t*            mwPagerNo;
+    STD(string)         mxPagerMask;
+    wchar_t*            mwPagerMask;
+    unsigned long       mulContactWorkerNo;
+    STD(string)         mxAlphaNumericFlag;
+    wchar_t*            mwAlphaNumericFlag;
+    unsigned long       mulPagerBufferSize;
+    unsigned long       mulMaxSvcPageSize;
+    long                mlGMTOffset;
+    long                mlServiceId;
+    long                mlPagerTypeId;
+};
+
+
+//
+// Helper routines...
+//
+//wchar_t* cmtpagew_wcscpy_w_new
+#ifndef SAFE_DELETE
+#   define SAFE_DELETE(pPtr)    ( pPtr ? delete pPtr, pPtr = NULL : 0 )
+#endif
+
+
+
+void CMTPagerImp::Initialize(void)
+/***************************************************************************
+** Purpose: Class Constructor
+**
+** Returns: Nothing
+**
+** History: 23-Jul-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    mwStatusCode        = NULL;
+    mxStatusCode        = "";
+    mwSubscriberName    = NULL;
+    mxSubscriberName    = "";
+    mwPagerNo           = NULL;
+    mxPagerNo           = "";
+    mwPagerMask         = NULL;
+    mxPagerMask         = "";
+    mulContactWorkerNo  = 0;
+    mwAlphaNumericFlag  = NULL;
+    mxAlphaNumericFlag  = "";
+    mulPagerBufferSize  = 0;
+    mulMaxSvcPageSize   = 0;
+    mlGMTOffset         = 0;
+    mlServiceId         = 0;
+    mlPagerTypeId       = 0;
+}
+
+
+
+CMTPagerImp::CMTPagerImp()
+/***************************************************************************
+** Purpose: Class Constructor
+**
+** Returns: Nothing
+**
+** History: 23-Jul-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    Initialize();
+}
+
+
+
+CMTPagerImp::CMTPagerImp(const STD(string)& xEXPNLine)
+/***************************************************************************
+** Purpose: Class Constructor
+**
+** Returns: Nothing
+**
+** History: 23-Jul-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    STD(string)     xLine = xEXPNLine;
+    STD(string)     xToken;
+    
+
+    Initialize();
+
+    if( !xLine.empty() )
+    {
+		// 214-PGR-I-SUCCESS,JBIRD,8000001,   ALWAYS,    2, 30038,6422,21801,21801,650255,A,500,1000,-360
+        // 214-PGR-I-SUCCESS,JBIRD,2088669350,ALWAYS,15034,100059,6422,21801,21801,896780,A,160, 136, -360
+        // 0                 1     2          3      4     5      6    7     8     9      1011  12   13
+
+        STD(basic_string) <char>::size_type nPos = (STD(string)::npos + 1);
+        
+        for (int iIndx = 0; iIndx <= 13 && nPos != STD(string)::npos; iIndx++)
+        {
+            /* Look for next occurrence of the separator */
+            STD(basic_string) <char>::size_type nPos = xLine.find(",");
+
+            if ( nPos != STD(string)::npos || iIndx == 13 ) /* found it (The last field {13} has no comma)*/
+            {
+                xToken = xLine.substr(0, nPos);  /* copy out the token just found       */
+                xLine.erase(0, nPos + 1);        /* erase the parameter from the string */
+
+                switch ( iIndx )
+                {
+                    case 0:
+                        xToken.erase(xToken.begin(), xToken.begin()+4);
+                        mxStatusCode = xToken;
+                        break;
+                    case 1:
+                        mxSubscriberName = xToken;
+                        break;
+                    case 2:
+                        mxPagerNo = xToken;
+                        break;
+                    case 3:
+                        mxPagerMask = xToken;
+                        break;
+                    case 4:
+                        mlPagerTypeId = atol(xToken.c_str());
+                        break;
+                    case 5:
+                        mlServiceId = atol(xToken.c_str());
+                        break;
+                    case 6:
+                        mulContactWorkerNo = atol(xToken.c_str());
+                        break;
+                    case 7:
+                    case 8:
+                    case 9:
+                        break;
+                    case 10:
+                        mxAlphaNumericFlag = xToken;
+                        break;
+                    case 11:
+                        mulPagerBufferSize = atol(xToken.c_str());
+                        break;
+                    case 12:
+                        mulMaxSvcPageSize = atol(xToken.c_str());
+                        break;
+                    case 13:
+                        mlGMTOffset = atol(xToken.c_str());
+                        break;
+                }
+                    
+            }
+            else /* no separator found */
+            {
+                //Initialize();
+                break;
+            }
+        }
+    }
+}
+
+
+
+CMTPagerImp::~CMTPagerImp()
+/***************************************************************************
+** Purpose: Class Destructor
+**
+** Returns: Nothing
+**
+** History: 23-Jul-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwStatusCode);
+    SAFE_DELETE(mwSubscriberName);
+    SAFE_DELETE(mwPagerNo);
+    SAFE_DELETE(mwPagerMask);
+    SAFE_DELETE(mwAlphaNumericFlag);
+}
+
+
+
+CMTPagerImp& CMTPagerImp::operator=(const CMTPagerImp &cPager)
+/***************************************************************************
+** Purpose: '=' operator
+**
+** Returns: Reference to new object
+**
+** History: 23-Jul-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    if ( this == &cPager ) goto RET;
+
+    mxStatusCode        = cPager.mxStatusCode;
+    mxSubscriberName    = cPager.mxSubscriberName;
+    mxPagerNo           = cPager.mxPagerNo;
+    mxPagerMask         = cPager.mxPagerMask;
+    mulContactWorkerNo  = cPager.mulContactWorkerNo;
+    mxAlphaNumericFlag  = cPager.mxAlphaNumericFlag;
+    mulPagerBufferSize  = cPager.mulPagerBufferSize;
+    mulMaxSvcPageSize   = cPager.mulMaxSvcPageSize;
+    mlGMTOffset         = cPager.mlGMTOffset;
+    mlServiceId         = cPager.mlServiceId;
+    mlPagerTypeId       = cPager.mlPagerTypeId;
+
+RET:
+    return *this;
+}
+
+
+
+CMTPagerImp::CMTPagerImp(const CMTPagerImp& cPager)
+/***************************************************************************
+** Purpose: Copy constructor
+**
+** Returns: Nothing
+**
+** History: 23-Jul-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    Initialize();
+
+    mxStatusCode        = cPager.mxStatusCode;
+    mxSubscriberName    = cPager.mxSubscriberName;
+    mxPagerNo           = cPager.mxPagerNo;
+    mxPagerMask         = cPager.mxPagerMask;
+    mulContactWorkerNo  = cPager.mulContactWorkerNo;
+    mxAlphaNumericFlag  = cPager.mxAlphaNumericFlag;
+    mulPagerBufferSize  = cPager.mulPagerBufferSize;
+    mulMaxSvcPageSize   = cPager.mulMaxSvcPageSize;
+    mlGMTOffset         = cPager.mlGMTOffset;
+    mlServiceId         = cPager.mlServiceId;
+    mlPagerTypeId       = cPager.mlPagerTypeId;
+}
+
+
+
+void CMTPagerImp::mSetStatusText(const STD(string) &InText)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 23-Jul-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    mStatusText.erase();
+    mStatusText = InText;
+}
+
+
+
+const wchar_t* CMTPagerImp::GetStatusCodew(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwStatusCode);
+    
+    hrMbsToWcs(&mwStatusCode, mxStatusCode.c_str());
+
+    return mwStatusCode;
+}
+
+
+
+const STD(string)& CMTPagerImp::GetStatusCode(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    return mxStatusCode;
+}
+
+
+
+const wchar_t* CMTPagerImp::GetSubscriberNamew(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwSubscriberName);
+    
+    hrMbsToWcs(&mwSubscriberName, mxSubscriberName.c_str());
+
+    return mwSubscriberName;
+}
+
+
+
+const STD(string)& CMTPagerImp::GetSubscriberName(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    return mxSubscriberName;
+}
+
+
+
+const wchar_t* CMTPagerImp::GetPagerNumberw(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwPagerNo);
+    
+    hrMbsToWcs(&mwPagerNo, mxPagerNo.c_str());
+
+    return mwPagerNo;
+}
+
+
+
+const STD(string)& CMTPagerImp::GetPagerNumber(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    return mxPagerNo;
+}
+
+
+
+const wchar_t* CMTPagerImp::GetDeliveryMaskw(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwPagerMask);
+    
+    hrMbsToWcs(&mwPagerMask, mxPagerMask.c_str());
+
+    return mwPagerMask;
+}
+
+
+
+const STD(string)& CMTPagerImp::GetDeliveryMask(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    return mxPagerMask;
+}
+
+
+
+unsigned long CMTPagerImp::GetContactWorkerNo(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    return mulContactWorkerNo;
+}
+
+
+
+const wchar_t* CMTPagerImp::GetAlphaNumericFlagw(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwAlphaNumericFlag);
+    
+    hrMbsToWcs(&mwAlphaNumericFlag, mxAlphaNumericFlag.c_str());
+
+    return mwAlphaNumericFlag;
+}
+
+
+
+const STD(string)& CMTPagerImp::GetAlphaNumericFlag(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    return mxAlphaNumericFlag;
+}
+
+
+
+unsigned long CMTPagerImp::GetMaxMessageSize(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    return (mulPagerBufferSize < mulMaxSvcPageSize ? mulPagerBufferSize : mulMaxSvcPageSize);
+}
+
+
+
+long CMTPagerImp::GetGMTOffset(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    return mlGMTOffset;
+}
+
+
+
+long CMTPagerImp::GetServiceId(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    return mlServiceId;
+}
+
+
+
+long CMTPagerImp::GetPagerTypeId(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+    return mlPagerTypeId;
+}
+
+
+
+void CMTPagerImp::PrintPagerData(void)
+/***************************************************************************
+** Purpose:
+**
+** Returns:
+**
+** History: 5-Aug-2003 John Bird   Initial Creation
+**
+***************************************************************************/
+{
+
+    printf(">>> PagerData\n");
+    printf("   Status Code      '%s'\n", mxStatusCode.c_str());
+    printf("   SubscriberName   '%s'\n", mxSubscriberName.c_str());
+    printf("   PagerNo          '%s'\n", mxPagerNo.c_str());
+    printf("   PagerMask        '%s'\n", mxPagerMask.c_str());
+    printf("   ContactWorkerNo   %lu\n", mulContactWorkerNo);
+    printf("   AlphaNumericFlag '%s'\n", mxAlphaNumericFlag.c_str());
+    printf("   PagerBufferSize   %lu\n", mulPagerBufferSize);
+    printf("   MaxSvcPageSize    %lu\n", mulMaxSvcPageSize);
+    printf("   GMTOffset         %d\n",  (int)mlGMTOffset);
+    printf("<<< PagerData\n");
+
+    return;
+}
+
+
+
+void CMTPageImp::Initialize(void)
+/***************************************************************************
+** Purpose: Class Constructor
+**
+** Returns: Nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    mwToList    = NULL;
+    mwMessage   = NULL;
+    mwFrom      = NULL;
+    mwAfter     = NULL;
+    mwSystem    = NULL;
+    mwStatusText = NULL;
+
+#if defined (_WIN32)
+    mhinstLib = NULL;
+#endif
+}
+
+
+
+CMTPageImp::CMTPageImp(void)
+/***************************************************************************
+** Purpose: Class Constructor
+**
+** Returns: Nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    Initialize();
+}
+
+
+
+CMTPageImp::CMTPageImp(const CMTPageImp& cPage)
+/***************************************************************************
+** Purpose: Copy constructor
+**
+** Returns: Nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    Initialize();
+
+    mToList  = cPage.mToList;
+    mMessage = cPage.mMessage;
+    mFrom    = cPage.mFrom;
+    mAfter   = cPage.mAfter;
+    mSystem  = cPage.mSystem;
+}
+
+
+
+CMTPageImp::~CMTPageImp(void)
+/***************************************************************************
+** Purpose: Class Destructor
+**
+** Returns: Nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+
+    if ( mSnpp.Connected() )
+    {
+        mSnpp.Disconnect();
+    }
+
+    if ( mwToList    != NULL ) delete mwToList;
+    if ( mwMessage   != NULL ) delete mwMessage;
+    if ( mwFrom      != NULL ) delete mwFrom;
+    if ( mwAfter     != NULL ) delete mwAfter;
+    if ( mwSystem    != NULL ) delete mwSystem;
+
+#if defined (_WIN32)
+    if ( mhinstLib != NULL) FreeLibrary(mhinstLib); 
+#endif
+}
+
+
+
+CMTPageImp& CMTPageImp::operator=(const CMTPageImp &cPage)
+/***************************************************************************
+** Purpose: '=' operator
+**
+** Returns: Reference to new object
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    if ( this == &cPage ) goto RET;
+
+    mToList  = cPage.mToList;
+    mMessage = cPage.mMessage;
+    mFrom    = cPage.mFrom;
+    mAfter   = cPage.mAfter;
+    mSystem  = cPage.mSystem;
+
+RET:
+    return *this;
+}
+
+
+
+void CMTPageImp::SetTo(const STD(string) &sToList)
+/***************************************************************************
+** Purpose: Sets the "mToList" member variable
+**
+** Returns: Nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    mToList.erase();
+    mToList = sToList;
+}
+
+
+
+void CMTPageImp::AppendTo(const STD(string) &sToList)
+/***************************************************************************
+** Purpose: Appends the value to the end of the "mToList" member variable
+**
+** Returns: Nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    if ( mToList.length() > 0 ) mToList += ",";
+    mToList += sToList;
+}
+
+
+
+const STD(string)& CMTPageImp::GetTo(void)
+/***************************************************************************
+** Purpose: Gets the value of the "mToList" member variable
+**
+** Returns: Reference to a STD(string)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    return mToList;
+}
+
+
+
+const wchar_t* CMTPageImp::GetTow(void)
+/***************************************************************************
+** Purpose: Gets the value of the "mToList" member variable
+**
+** Returns: Reference to a STD(string)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwToList);
+    
+    hrMbsToWcs(&mwToList, mToList.c_str());
+
+    return mwToList;
+}
+
+
+
+void CMTPageImp::SetFrom(const STD(string) &sFrom)
+/***************************************************************************
+** Purpose: Sets the value of the "sFrom" member variable
+**
+** Returns: nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    mFrom.erase();
+    mFrom = sFrom;
+}
+
+
+
+const STD(string)& CMTPageImp::GetFrom(void)
+/***************************************************************************
+** Purpose: returns the value of the "mFrom" member variable
+**
+** Returns: reference to a STD(string)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    return mFrom;
+}
+
+
+
+const wchar_t* CMTPageImp::GetFromw(void)
+/***************************************************************************
+** Purpose: returns the value of the "mFrom" member variable
+**
+** Returns: reference to a STD(string)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwFrom);
+
+    hrMbsToWcs(&mwFrom, mFrom.c_str());
+
+    return mwFrom;
+}
+
+
+
+void CMTPageImp::SetPageMsg(const STD(string) &sMessage)
+/***************************************************************************
+** Purpose: Sets the value of the "sMessage" member variable
+**
+** Returns: nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    mMessage.erase();
+    mMessage = sMessage;
+}
+
+
+
+const STD(string)& CMTPageImp::GetPageMsg(void)
+/***************************************************************************
+** Purpose: Returns the value of the "mMessage" member variable
+**
+** Returns: Reference to a STD(string)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    return mMessage;
+}
+
+
+
+const wchar_t* CMTPageImp::GetPageMsgw(void)
+/***************************************************************************
+** Purpose: Returns the value of the "mMessage" member variable
+**
+** Returns: Reference to a STD(string)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwMessage);
+
+    hrMbsToWcs(&mwMessage, mMessage.c_str());
+
+    return mwMessage;
+}
+
+
+
+void CMTPageImp::SetAfter(const STD(string) &sAfter)
+/***************************************************************************
+** Purpose: Sets the value of the "mAfter" member variable
+**
+** Returns: nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    mAfter.erase();
+    mAfter = sAfter;
+}
+
+
+
+const STD(string)& CMTPageImp::GetAfter(void)
+/***************************************************************************
+** Purpose: Returns the value of the "mAfter" member vaariable
+**
+** Returns: reference to a STD(string)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    return mAfter;
+}
+
+
+
+const wchar_t* CMTPageImp::GetAfterw(void)
+/***************************************************************************
+** Purpose: Returns the value of the "mAfter" member vaariable
+**
+** Returns: reference to a STD(string)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwAfter);
+
+    hrMbsToWcs(&mwAfter, mAfter.c_str());
+
+    return mwAfter;
+}
+
+
+
+void CMTPageImp::SetSystem(const STD(string) &sSystem)
+/***************************************************************************
+** Purpose: Sets the value of the "mSystem" member variable
+**
+** Returns: nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    mSystem.erase();
+    mSystem = sSystem;
+}
+
+
+
+const STD(string)& CMTPageImp::GetSystem(void)
+/***************************************************************************
+** Purpose: Returns the value of the "mSystem" member variable
+**
+** Returns: Reference to a STD(string)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    return mSystem;
+}
+
+
+
+const wchar_t* CMTPageImp::GetSystemw(void)
+/***************************************************************************
+** Purpose: Returns the value of the "mSystem" member variable
+**
+** Returns: Reference to a STD(string)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwSystem);
+
+    hrMbsToWcs(&mwSystem, mSystem.c_str());
+
+    return mwSystem;
+}
+
+
+
+void CMTPageImp::Reset(void)
+/***************************************************************************
+** Purpose: Resets all of the member variables to their default values
+**
+** Returns: nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    mToList.erase();
+    mMessage.erase();
+    mFrom.erase();
+    mAfter.erase();
+    mSystem.erase();
+}
+
+
+
+long CMTPageImp::Send(void)
+/***************************************************************************
+**
+** CMTPageImp::Send
+**
+** Purpose: Sends the page using the existing member variable settings
+**
+** Returns:
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    long	bRetStatus = TRUE;
+    STD(string) sPager;
+    long    lPagerCnt = 0;
+    char*   pcPtr = NULL;
+    long	bAlreadyConnected = TRUE;
+    long    lResult;
+
+    mStatusCode = 0;
+
+    //
+    // Make sure we've been supplied with enough information
+    //
+    if ( mToList.length() == 0 )
+    {
+        mSetStatusText("'To List' is empty.");
+        mStatusCode = 110;
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+    if ( mMessage.length() == 0 )
+    {
+        mSetStatusText("'Message' is empty.");
+        mStatusCode = 112;
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+    //
+    // If no 'from' name was provided use the currently logged in username
+    //
+    if ( mFrom.length() == 0 )
+    {
+        char    zUsername[50];
+
+#if defined(_WIN32)
+        unsigned long    lUsernameSize = sizeof(zUsername);
+
+        GetUserNameA(zUsername, &lUsernameSize);
+#else
+        cuserid(zUsername);
+#endif
+
+        mFrom = zUsername;
+    }
+
+    //
+    // Check to see if we're already connected. If not, connect and
+    // remember to disconnect at the end.
+    //
+    if ( !mSnpp.Connected() )
+    {
+        if ( !mSnpp.Connect() )
+        {
+            bRetStatus = FALSE;
+            goto RET;
+        }
+
+        bAlreadyConnected = FALSE;
+    }
+
+    //
+    // Start the SNPP protocol
+    //
+
+    //
+    // send LOGI
+    //
+    if ( !mSnpp.Logi(mFrom) )
+    {
+        mSetStatusText(mSnpp.GetStatusText());
+        mStatusCode = atol(mSnpp.GetStatusText().c_str());
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+
+
+    //
+    // send CALL   (paging system name)
+    //
+    if ( mSystem.length() > 0 )
+    {
+        if ( !mSnpp.Call(mSystem) )
+        {
+            mSetStatusText(mSnpp.GetStatusText());
+            mStatusCode = atol(mSnpp.GetStatusText().c_str());
+            bRetStatus = FALSE;
+            goto RET;
+        }
+    }
+
+    //
+    // send HOLD
+    //
+    if ( mAfter.length() > 0 )
+    {
+        if ( !mSnpp.Hold(mAfter) )
+        {
+            mSetStatusText(mSnpp.GetStatusText());
+            mStatusCode = atol(mSnpp.GetStatusText().c_str());
+            bRetStatus = FALSE;
+            goto RET;
+        }
+    }
+
+
+    //
+    // send MESS
+    //
+    if ( !mSnpp.Mess(mMessage) )
+    {
+        mSetStatusText(mSnpp.GetStatusText());
+        mStatusCode = atol(mSnpp.GetStatusText().c_str());
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+
+    //
+    // send PAGE(s) (pager id's)
+    //
+
+
+    //
+    // Parse the list and send one pager id at a time
+    //
+
+    pcPtr = (char*)mToList.c_str();
+
+    while ( *pcPtr != '\0' )
+    {
+        sPager.erase();
+        while ( *pcPtr != ',' &&
+                *pcPtr != '\0' )
+        {
+            sPager += *(pcPtr++);
+        }
+
+        if ( !mSnpp.Page(sPager) )
+        {
+            mSetStatusText(mSnpp.GetStatusText());
+            mStatusCode = atol(mSnpp.GetStatusText().c_str());
+            bRetStatus = FALSE;
+
+            lResult = atoi (GetStatusText().c_str());
+
+            if ( lResult != 550 )  // Not just 'invalid pager id'
+            {
+                goto RET;
+            }
+        }
+        else
+        {
+            lPagerCnt++;
+        }
+
+        if ( *pcPtr == ',' ) pcPtr++;
+    }
+
+    //
+    // Make sure we had at least one valid PAGE
+    //
+    if ( lPagerCnt == 0 )
+    {
+        mSnpp.Rset();
+        mSetStatusText("No valid pager id's were supplied. page not sent.");
+        mStatusCode = 550;
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+
+    //
+    // send SEND
+    //
+    if ( !mSnpp.Send() )
+    {
+        mSetStatusText(mSnpp.GetStatusText());
+        mStatusCode = atol(mSnpp.GetStatusText().c_str());
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+    mStatusCode = atol(mSnpp.GetStatusText().c_str());
+    mSetStatusText(mSnpp.GetStatusText());
+
+    
+
+RET:
+
+    //
+    // If we were already connected before this routine was called leave it
+    // connected.
+    //
+    if ( bAlreadyConnected )
+    {
+        mSnpp.Rset();
+    }
+    else
+    {
+        Disconnect();
+    }
+
+    Reset();
+
+    return bRetStatus;
+}
+
+
+
+long CMTPageImp::Send(const STD(string) &InToList,
+                           const STD(string) &InMessage,
+                           const STD(string) &InFrom,
+                           const STD(string) &InAfter,
+                           const STD(string) &InSystem)
+/***************************************************************************
+** Purpose: Sends the page. Any values passed in will override any previously
+**          set values. All values will be reset after the call.
+**
+** Returns: TRUE or FALSE
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    if ( InToList.length() > 0 )    SetTo(InToList);
+    if ( InMessage.length() > 0 )   SetPageMsg(InMessage);
+    if ( InFrom.length() > 0 )      SetFrom(InFrom);
+    if ( InAfter.length() > 0 )     SetAfter(InAfter);
+    if ( InSystem.length() > 0 )    SetSystem(InSystem);
+
+    return Send();
+}
+
+
+
+long CMTPageImp::Connect(const STD(string) &sHost)
+/***************************************************************************
+**
+** CMTPageImp::Connect
+**
+** Purpose: Makes a connection to the paging server
+**
+** Returns: TRUE or FALSE
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    long        bRetStatus = TRUE;
+
+
+    if ( !mSnpp.Connect(sHost) )
+    {
+        mSetStatusText(mSnpp.GetStatusText());
+        mStatusCode = atol(mSnpp.GetStatusText().c_str());
+        bRetStatus = FALSE;
+    }
+
+    return bRetStatus;
+}
+
+
+
+void CMTPageImp::Disconnect(void)
+/***************************************************************************
+**
+** CMTPageImp::Disconnect
+**
+** Purpose: Disconnect from the paging server
+**
+** Returns: nothing
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+
+    if ( mSnpp.Connected() )
+    {
+        mSnpp.Quit();
+        mSnpp.Disconnect();
+    }
+}
+
+
+
+long CMTPageImp::GetStatusCode(void)
+/***************************************************************************
+**
+** CMTPageImp::GetStatusCode
+**
+** Purpose: returns the value of the "mStatusCode" member variable. This
+**          value will contain the last error code set.
+**
+** Returns: long (Status Code)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    return mStatusCode;
+}
+
+
+
+const STD(string)& CMTPageImp::GetStatusText(void)
+/***************************************************************************
+**
+** CMTPageImp::GetStatusText
+**
+** Purpose: Returns the value of the "mStatusText" member variable. This
+**          value will be the last error STD(string) set.
+**
+** Returns: reference to a STD(string) (Status Text)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    return mStatusText;
+}
+
+
+
+const wchar_t* CMTPageImp::GetStatusTextw(void)
+/***************************************************************************
+**
+** CMTPageImp::GetStatusText
+**
+** Purpose: Returns the value of the "mStatusText" member variable. This
+**          value will be the last error STD(string) set.
+**
+** Returns: reference to a STD(string) (Status Text)
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    SAFE_DELETE(mwStatusText);
+
+    hrMbsToWcs(&mwStatusText, mStatusText.c_str());
+
+    return mwStatusText;
+}
+
+
+
+void CMTPageImp::mSetStatusText (const STD(string) &InText)
+/***************************************************************************
+**
+** CMTPageImp::CMTPageImp
+**
+** Purpose:
+**
+** Returns:
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    mStatusText.erase();
+    mStatusText = InText;
+}
+
+
+
+long CMTPageImp::Lookup(const STD(string)& InxItem, CMTPagerwVect& InOutvPagers)
+/***************************************************************************
+** Purpose: 
+**
+** Returns: 
+**
+** History: 01-Jul-2003     JBIRD       Initial creation.
+**
+***************************************************************************/
+{
+    long   bRetStatus          = TRUE;
+    long   bAlreadyConnected   = TRUE;
+    
+    STD(string) xLine               = "";
+    
+
+
+    //
+    // Check to see if we're already connected. If not, connect and
+    // remember to disconnect at the end.
+    //
+    if ( !mSnpp.Connected() )
+    {
+        if ( !mSnpp.Connect() )
+        {
+            bRetStatus = FALSE;
+            goto RET;
+        }
+
+        bAlreadyConnected = FALSE;
+    }
+
+    if ( !mSnpp.StreamWriteLine("EXPN " + InxItem) )
+    {
+        char    zBuffer[255];
+        
+        sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+
+    mSnpp.StreamReadLine(xLine, 45);
+    while ( xLine.length() >= 4 &&
+            xLine[3] == '-' )
+    {
+        InOutvPagers.push_back(CMTPagerw(xLine));
+
+        mSnpp.StreamReadLine(xLine, 45);
+    }
+
+    //
+    // If we were already connected before this routine was called leave it
+    // connected.
+    //
+    if ( bAlreadyConnected )
+    {
+        mSnpp.Rset();
+    }
+    else
+    {
+        mSnpp.Disconnect();
+    }
+
+RET:
+
+    return bRetStatus;
+}
+
+
+
+long CMTPageImp::GetServiceDataFromId(long         InlPageSvcId,
+                                         STD(string)& OutxPageSvcCode,
+                                         STD(string)& OutxPageSvcDesc)
+{
+    long   bRetStatus          = TRUE;
+    long   bAlreadyConnected   = TRUE;
+    
+    STD(string) xLine               = "";
+    
+    char        zCmd[81];
+
+
+    //
+    // Check to see if we're already connected. If not, connect and
+    // remember to disconnect at the end.
+    //
+    if ( !mSnpp.Connected() )
+    {
+        if ( !mSnpp.Connect() )
+        {
+            bRetStatus = FALSE;
+            goto RET;
+        }
+
+        bAlreadyConnected = FALSE;
+    }
+
+    sprintf(zCmd, "PSVC %d", (int)InlPageSvcId);
+    if ( !mSnpp.StreamWriteLine(zCmd) )
+    {
+        char    zBuffer[255];
+        
+        sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+
+    mSnpp.StreamReadLine(xLine, 45);
+    if ( xLine.length() >= 4 )
+    {
+        STD(string) xStatNum;
+        
+        if ( ! hrGetNextToken(xLine, xStatNum, " ") )
+        {
+            bRetStatus = FALSE;
+            goto RET;
+        }
+        
+        if ( "250" == xStatNum )
+        {
+            if ( ! hrGetNextToken(xLine, OutxPageSvcCode, ",") )
+            {
+                bRetStatus = FALSE;
+                goto RET;
+            }
+        
+            if ( ! hrGetNextToken(xLine, OutxPageSvcDesc, ",") )
+            {
+                bRetStatus = FALSE;
+                goto RET;
+            }
+        }
+        else
+        {
+            bRetStatus = FALSE;
+        }
+    }
+    else
+    {
+        bRetStatus = FALSE;
+    }
+
+
+    //
+    // If we were already connected before this routine was called leave it
+    // connected.
+    //
+RET:
+    if ( bAlreadyConnected )
+    {
+        mSnpp.Rset();
+    }
+    else
+    {
+        mSnpp.Disconnect();
+    }
+
+    return bRetStatus;
+}
+
+
+
+long CMTPageImp::GetPagerTypeDataFromId(long           InlPagerTypeId,
+                                             STD(string)&   OutxPagerTypeCode,
+                                             STD(string)&   OutxPagerTypeDesc)
+{
+    long   bRetStatus          = TRUE;
+    long   bAlreadyConnected   = TRUE;
+    
+    STD(string) xLine               = "";
+
+
+    char        zCmd[81];
+
+
+
+    //
+    // Check to see if we're already connected. If not, connect and
+    // remember to disconnect at the end.
+    //
+    if ( !mSnpp.Connected() )
+    {
+        if ( !mSnpp.Connect() )
+        {
+            bRetStatus = FALSE;
+            goto RET;
+        }
+
+        bAlreadyConnected = FALSE;
+    }
+
+    
+    sprintf(zCmd, "PTYP %d", (int)InlPagerTypeId);
+    if ( !mSnpp.StreamWriteLine(zCmd) )
+    {
+        char    zBuffer[255];
+        
+        sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+
+    mSnpp.StreamReadLine(xLine, 45);
+    if ( xLine.length() >= 4 )
+    {
+        STD(string) xStatNum;
+        
+        if ( ! hrGetNextToken(xLine, xStatNum, " ") )
+        {
+            bRetStatus = FALSE;
+            goto RET;
+        }
+        
+        if ( "250" == xStatNum )
+        {
+            if ( ! hrGetNextToken(xLine, OutxPagerTypeCode, ",") )
+            {
+                bRetStatus = FALSE;
+                goto RET;
+            }
+        
+            if ( ! hrGetNextToken(xLine, OutxPagerTypeDesc, ",") )
+            {
+                bRetStatus = FALSE;
+                goto RET;
+            }
+        }
+        else
+        {
+            bRetStatus = FALSE;
+        }
+    }
+    else
+    {
+        bRetStatus = FALSE;
+    }
+
+    //
+    // If we were already connected before this routine was called leave it
+    // connected.
+    //
+RET:
+    if ( bAlreadyConnected )
+    {
+        mSnpp.Rset();
+    }
+    else
+    {
+        mSnpp.Disconnect();
+    }
+
+    return bRetStatus;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//  C M T S n p p   C l a s s   D e f i n i t i o n
+//
+/////////////////////////////////////////////////////////////////////////////
+
+
+CMTSnpp::CMTSnpp(void)
+{
+    m_iIOHandle = 0;        // not yet connected
+    mWSAStartup = FALSE;    // not called WSAStartup yet (WIN32)
+
+
+    m_lBufferSize = m_lDefBufSize;
+
+    m_zBuffer = new char[m_lBufferSize];
+    memset(m_zBuffer, 0, m_lBufferSize);
+
+    m_InvalidUsers = "";
+}
+
+
+
+CMTSnpp::~CMTSnpp(void)
+{
+    if ( m_iIOHandle != 0 )   // need to disconnect socket
+    {
+#  if defined(_WIN32)
+        closesocket(m_iIOHandle);
+#  else
+        close(m_iIOHandle);
+#  endif
+        m_iIOHandle = 0;
+    }
+
+#  if defined (_WIN32)
+    if ( mWSAStartup )
+    {
+        WSACleanup();
+    }
+#  endif
+
+
+    if ( m_zBuffer != NULL ) //if it is the letter class
+    {
+        //deallocate memory for letter class only
+        delete[] m_zBuffer;
+        m_zBuffer = NULL;
+    }
+
+}
+
+
+
+CMTSnpp::CMTSnpp(const CMTSnpp &cSnpp)
+{
+}
+
+
+
+long CMTSnpp::Connect(const STD(string) &sHost)
+{
+    long        lStatus;
+    long        bRetStatus = FALSE;
+    char        zBuffer[1000];
+    long        idx;
+    long        lResult;
+    char        zSnppServer[64] = "";
+
+    struct hostent*     psHostEnt = NULL;
+    struct sockaddr_in  sSockAddr;
+    int                 iError;
+
+    m_InvalidUsers = "";
+
+	char    zSnppServerList[1000] = "";
+    char    *ptr = NULL;
+
+
+#if defined(_WIN32)
+    short       nVersionRequested;
+    WSADATA     WsaData;
+
+
+    nVersionRequested = MAKEWORD(1,1);
+    lStatus = WSAStartup(nVersionRequested, &WsaData);
+
+    if ( lStatus != 0 )
+    {
+        mSetStatusText("Could not find a usable winsock.dll");
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+    mWSAStartup = TRUE;
+#endif
+
+
+    // If the default of "snpp" was used build a list of backup servers to attempt the 
+    // connection on. Start first with the local domain then move on to other domains
+    // to see if a connection can be made over the WAN.
+
+    if ( sHost.length() > 0 && strcmp(sHost.c_str(), "snpp") == 0 )
+    {
+        char        zLocalDomainName[64];
+        gethostname (zLocalDomainName, sizeof(zLocalDomainName));
+
+        // parse the domain name out of the local host name
+        if ( (ptr = strchr (zLocalDomainName, '.')) != NULL )
+        {
+            strcpy (zLocalDomainName, ptr+1);
+        }
+        else
+        {
+            zLocalDomainName[0] = '\0';
+        }
+
+	    // lower case the domain name
+	    ptr = zLocalDomainName;
+	    while ( *ptr != '\0' )
+	    {
+		    if ( *ptr >= 'A' && *ptr <= 'Z' ) *ptr += 32;
+		    ptr++;
+	    }
+
+        strcpy(zSnppServerList, "snpp"); // attempt the local domain first
+
+        //if ( strlen(zLocalDomainName) == 0 ) strcpy (zLocalDomainName, "micron.com");
+        
+        if ( strcmp (zLocalDomainName, "micron.com") != 0 )  
+            strcat(zSnppServerList, ",snpp.micron.com");
+
+        if ( strcmp (zLocalDomainName, "sing.micron.com") != 0 )
+            strcat(zSnppServerList, ",snpp.sing.micron.com");
+
+        if ( strcmp (zLocalDomainName, "lehi.micron.com") != 0 )
+            strcat(zSnppServerList, ",snpp.lehi.micron.com");
+
+        if ( strcmp (zLocalDomainName, "mava.micron.com") != 0 )
+            strcat(zSnppServerList, ",snpp.mava.micron.com");
+    }
+    else
+    {
+        strcpy(zSnppServerList,sHost.c_str());
+    }
+
+
+
+    // interate the server list and keep trying to send the message to each host until 
+    // one accepts a connection and responds with the welcome message
+    ptr = zSnppServerList;
+    while ( strlen(ptr) > 0 )
+    {
+        // Get the next host name in the list
+        unsigned long lHostLen = strcspn(ptr, ",;"); 
+
+        if ( lHostLen > sizeof(zSnppServer)) // make sure the result fits
+            lHostLen = sizeof(zSnppServer);
+
+        strncpy (zSnppServer, ptr, lHostLen);
+        zSnppServer[lHostLen] = '\0';
+
+        ptr += lHostLen;            // move to the delimiter
+        if ( *ptr != '\0' ) ptr++;  // move past the delimiter if not the end of the string
+
+
+        //
+        // Lookup SNPP server IP address(es) for this host name
+        //
+
+#if defined(__VMS) || defined(sun)
+        struct hostent  sHostEntity;
+        char            zHostEntBuf[2048];
+
+        psHostEnt = gethostbyname_r(zSnppServer,
+                                    &sHostEntity,
+                                    zHostEntBuf, sizeof(zHostEntBuf),
+                                    &iError);
+#elif defined(linux) 
+        struct hostent  sHostEntity;
+        char            zHostEntBuf[2048];
+        int             iStatus;
+
+
+        iStatus = gethostbyname_r(zSnppServer,
+                                  &sHostEntity,
+                                  zHostEntBuf, sizeof(zHostEntBuf),
+                                  &psHostEnt,
+                                  &iError);
+
+        if ( iStatus != 0 )
+        {
+            psHostEnt = NULL;
+        }
+#elif defined(__xlC__)
+        struct hostent          Htent;
+        struct hostent_data     Ht_data;
+
+        iError = gethostbyname_r(zSnppServer, &Htent, &Ht_data);
+
+        if ( iError != 0 )
+        {
+            psHostEnt = NULL;
+        }
+        else
+        {
+            psHostEnt = &Htent;
+        }
+#elif defined(_WIN32) || defined(cygwin)
+
+        psHostEnt = gethostbyname(zSnppServer);
+        iError = WSAGetLastError();
+#else
+#   error "The CMTpagew.cpp module has not been coded to compile on this platform yet."
+#endif
+
+        if ( psHostEnt != NULL ) // DNS lookup succeeded
+        {
+            //
+            // Connect the socket to the SNPP server. If the DNS lookup returned more than one
+            // address keep trying until one succeeds.
+            //
+            lStatus = -1;
+            for ( idx = 0; psHostEnt->h_addr_list[idx] != 0 && lStatus == -1; idx++ )
+            {
+                //
+                // Open a socket
+                //
+                if ( (m_iIOHandle = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) != -1 )
+                {
+                    sSockAddr.sin_family = psHostEnt->h_addrtype;
+                    sSockAddr.sin_port = htons (SNPP_PORT);
+                    sSockAddr.sin_addr = *((struct in_addr *)psHostEnt->h_addr_list[idx]);
+
+                    lStatus = connect(m_iIOHandle,
+                                    (struct sockaddr*)&sSockAddr,
+                                    sizeof(sSockAddr));
+
+                    if ( lStatus == -1 )
+                    {
+#if defined (_WIN32)
+                        closesocket(m_iIOHandle);
+#else
+                        close(m_iIOHandle);
+#endif
+                        m_iIOHandle = 0;
+                    }
+                }
+                else
+                {
+                    sprintf(zBuffer, "Error on TCP socket open - %d", WSAGetLastError());
+                    mSetStatusText(zBuffer);
+                }
+            }
+
+            if ( lStatus != -1 ) // TCP connection successful
+            {
+
+#if defined(_WIN32)
+    strncpy (m_ServerIP, inet_ntoa(sSockAddr.sin_addr), sizeof(m_ServerIP)); // format the IP address to an ascii string
+    m_ServerIP[sizeof(m_ServerIP)-1] = '\0';
+#endif
+
+                // Receive the initial welcome message
+
+                mRecv(zBuffer, sizeof(zBuffer));
+
+                if ( (lResult = atoi(zBuffer)) == 220 )
+                {
+                    bRetStatus = TRUE;
+                    break;
+                }
+                else
+                {
+                    if ( lResult == 0 )
+                    {
+                        sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+                        mSetStatusText(zBuffer);
+                    }
+                }
+            }
+        }
+    }
+
+RET:
+    return bRetStatus;
+}
+
+
+
+long CMTSnpp::Logi(const STD(string) &sFrom,
+                        const STD(string) &sPassword)
+{
+    long   bRetStatus = TRUE;
+    STD(string) sCommand = "LOGI ";
+    char      zBuffer[255];
+    long      lResult;
+
+
+
+    // Get the image name of the calling program
+    if ( strlen(hrGetExecName()) )
+    {
+        sCommand = "EXEC ";
+        sCommand += hrGetExecName();
+        sCommand += "\r\n";
+
+        if ( !mSend(sCommand) )
+        {
+            sprintf(zBuffer, "Error on TCP send - %d", WSAGetLastError());
+            mSetStatusText(zBuffer);
+            bRetStatus = FALSE;
+            goto RET;
+        }
+
+        mRecv(zBuffer, sizeof(zBuffer));
+
+        if ( (lResult = atoi(zBuffer)) != 250 )
+        {
+            if ( lResult == 0 )
+            {
+                sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+            }
+
+            mSetStatusText(zBuffer);
+            bRetStatus = FALSE;
+            goto RET;
+        }
+    }
+    
+
+    sCommand = "LOGI ";
+    sCommand += sFrom;
+
+    if ( sPassword.length() > 0 )
+    {
+        sCommand += " ";
+        sCommand += sPassword;
+    }
+
+    sCommand += "\r\n";
+
+    if ( !mSend(sCommand) )
+    {
+        sprintf(zBuffer, "Error on TCP send - %d", WSAGetLastError());
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+    mRecv(zBuffer, sizeof(zBuffer));
+
+    if ( (lResult = atoi(zBuffer)) != 250 )
+    {
+        if ( lResult == 0 )
+        {
+            sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        }
+
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+    }
+
+RET:
+    return bRetStatus;
+}
+
+
+
+long CMTSnpp::Call(const STD(string) &sCallerID)
+{
+    long   bRetStatus = TRUE;
+    long      lResult;
+    STD(string) sCommand = "CALL ";
+    char      zBuffer[255];
+
+    sCommand += sCallerID;
+
+    sCommand += "\r\n";
+
+    if ( !mSend(sCommand) )
+    {
+        sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+
+    mRecv(zBuffer, sizeof(zBuffer));
+
+    if ( (lResult = atoi (zBuffer)) != 250 )
+    {
+        if ( lResult == 0 )
+        {
+            sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        }
+
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+    }
+
+RET:
+    return bRetStatus;
+}
+
+
+
+long CMTSnpp::Hold(const STD(string) &sAfter)
+{
+    long   bRetStatus = TRUE;
+    long      lResult;
+    STD(string) sCommand = "HOLD ";
+    char      zBuffer [255];
+    char      zAfter[17];
+
+
+    strncpy(zAfter, sAfter.c_str(), sizeof(zAfter));
+
+    zAfter[sizeof(zAfter)-1] = '\0';
+
+    if ( strlen(zAfter) == 8 )  // we were only given the date. Assume midnight
+    {
+        strcat(zAfter, "00000000");
+    }
+
+    zAfter[16] = '\0';           // SNPP will accept 16 or 12 characters
+
+    sCommand += zAfter;
+    sCommand += "\r\n";
+
+    if ( !mSend(sCommand) )
+    {
+        sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        mSetStatusText (zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+
+    mRecv(zBuffer, sizeof(zBuffer));
+
+    if ( (lResult = atoi(zBuffer)) != 250 )
+    {
+        if ( lResult == 0 )
+        {
+            sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        }
+
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+    }
+
+RET:
+    return bRetStatus;
+}
+
+
+
+long CMTSnpp::Mess(const STD(string) &sMessage)
+{
+    long   bRetStatus = TRUE;
+    long      lResult;
+    STD(string) sCommand = "MESS ";
+    char      zBuffer [2000];
+    char      *pcPtr = NULL;
+
+    strncpy(zBuffer, sMessage.c_str(), sizeof(zBuffer));
+    zBuffer[sizeof(zBuffer)-1] = '\0';
+
+
+    //
+    // Make sure there are no embedded newline or carraige control characters
+    //
+    pcPtr = zBuffer;
+    while ( pcPtr != NULL && *pcPtr != '\0' )
+    {
+        // if a \r\n or \n\r pair exists change it to a single backslash
+        if ( (*pcPtr == '\r' && *(pcPtr+1) == '\n') ||
+             (*pcPtr == '\n' && *(pcPtr+1) == '\r') )
+        {
+            *pcPtr = '\\';
+            strcpy (pcPtr+1, pcPtr+2);
+        }
+        else if ( *pcPtr == '\r' || *pcPtr == '\n' ) // change single \r or \n to a backslash
+        {
+            *pcPtr = '\\';
+        }
+        if ( *pcPtr != '\0' ) pcPtr++;
+    }
+
+    // jpf removed
+    //while ( (pcPtr = strchr(zBuffer, '\r')) ||
+    //        (pcPtr = strchr(zBuffer, '\n')) )
+    //{
+    //    *pcPtr = '\\';
+    //}
+
+    sCommand += zBuffer;
+    sCommand += "\r\n";
+
+
+    if ( !mSend(sCommand) )
+    {
+        sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+    mRecv(zBuffer, sizeof(zBuffer));
+
+    if ( (lResult = atoi (zBuffer)) != 250 )
+    {
+        if ( lResult == 0 )
+        {
+            sprintf (zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        }
+
+        mSetStatusText (zBuffer);
+        bRetStatus = FALSE;
+    }
+
+RET:
+    return bRetStatus;
+}
+
+
+
+long CMTSnpp::Page(const STD(string) &sPager)
+{
+    long   bRetStatus = TRUE;
+    long      lResult;
+    STD(string) sCommand = "PAGE ";
+    char      zBuffer [255];
+
+    sCommand += sPager;
+
+    sCommand += "\r\n";
+
+    if ( !mSend(sCommand) )
+    {
+        sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+
+    mRecv(zBuffer, sizeof(zBuffer));
+
+    if ( (lResult = atoi(zBuffer)) != 250 )
+    {
+        if ( lResult == 0 )
+        {
+            sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        }
+
+        if ( m_InvalidUsers.size() > 0 ) m_InvalidUsers += ", ";
+        m_InvalidUsers += sPager;
+
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+    }
+
+RET:
+    return bRetStatus;
+}
+
+
+
+long CMTSnpp::Send(void)
+{
+    long   bRetStatus = TRUE;
+    long      lResult;
+    char      zBuffer [255];
+
+    if ( !mSend("SEND\r\n") )
+    {
+        sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+
+        strcat (zBuffer, " (");
+		strcat (zBuffer, m_ServerIP);
+		strcat (zBuffer, " )");
+
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+    mRecv(zBuffer, sizeof(zBuffer));
+
+    if ( (lResult = atoi(zBuffer)) != 250 )
+    {
+        if ( lResult == 0 )
+        {
+            sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        }
+
+        strcat (zBuffer, " (");
+		strcat (zBuffer, m_ServerIP);
+		strcat (zBuffer, " )");
+
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+    if ( m_InvalidUsers.size() > 0 )
+    {
+        STD(string) Buffer = "550 - Message sent, recipient list containes some invalid pager names: ";
+        Buffer += m_InvalidUsers;
+
+        Buffer += " (";
+		Buffer += m_ServerIP;
+		Buffer += " )";
+
+        mSetStatusText(Buffer);
+        bRetStatus = FALSE;
+    }
+    else
+    {
+		strcat (zBuffer, " (");
+		strcat (zBuffer, m_ServerIP);
+		strcat (zBuffer, " )");
+
+        mSetStatusText(zBuffer);
+    }
+
+RET:
+    return bRetStatus;
+}
+
+
+
+long CMTSnpp::Rset(void)
+{
+    long   bRetStatus = TRUE;
+    long      lResult;
+    char      zBuffer [255];
+
+    if ( !mSend("RESE\r\n") )
+    {
+        sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+    mRecv(zBuffer, sizeof(zBuffer));
+
+    if ( (lResult = atoi(zBuffer)) != 250 )
+    {
+        if ( lResult == 0 )
+        {
+            sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        }
+
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+    }
+
+    m_InvalidUsers = "";
+
+RET:
+    return bRetStatus;
+}
+
+
+
+long CMTSnpp::Quit(void)
+{
+    long   bRetStatus = TRUE;
+    char      zBuffer [255];
+
+    if ( !mSend("QUIT\r\n") )
+    {
+        sprintf(zBuffer, "Error on TCP recv - %d", WSAGetLastError());
+        mSetStatusText(zBuffer);
+        bRetStatus = FALSE;
+        goto RET;
+    }
+
+    mRecv(zBuffer, sizeof(zBuffer));
+
+RET:
+    return bRetStatus;
+}
+
+
+
+long CMTSnpp::Disconnect(void)
+{
+    if ( m_iIOHandle > 0 )
+    {
+#if defined(_WIN32)
+        closesocket(m_iIOHandle);
+#else
+        close(m_iIOHandle);
+#endif
+        m_iIOHandle = 0;
+    }
+
+    return TRUE;
+}
+
+
+
+void CMTSnpp::mSetStatusText(const STD(string) &sText)
+/***************************************************************************
+**
+** CMTSnpp::mSetSttausText
+**
+** Purpose:
+**
+** Returns:
+**
+** History: 3-Jul-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    mStatusText.erase();
+    mStatusText = sText;
+}
+
+
+
+const STD(string)& CMTSnpp::GetStatusText(void)
+{
+    return mStatusText;
+}
+
+
+
+long CMTSnpp::Connected(void)
+{
+    return (m_iIOHandle != 0);
+}
+
+
+
+long CMTSnpp::mRecv(char*        pzBuffer,
+                         const long   lBufferSize)
+/****************************************************************************************
+** Purpose: Receive a line of text from the TCP/IP socket. Since TCP is stream
+**          oriented we may not get an entire response with one read. This routine
+**          keeps reading until the carriage return is found.
+**
+** Returns: Number of bytes read
+**
+** History: 16-Mar-1998 John Ferguson   Initial Creation
+**
+**
+*****************************************************************************************/
+{
+    long          lStatus;
+    long          lMsgLen = 0;
+    long       bEol = FALSE;
+    struct timeval  sTimeout = {0,0};
+    fd_set          sRmask;
+    long          lNumBytes;
+    char          *pzPtr = NULL;
+
+
+    while ( !bEol &&
+            lMsgLen < lBufferSize-1 )
+    {
+
+        sTimeout.tv_sec = 60;
+
+        FD_ZERO(&sRmask);
+        FD_SET(m_iIOHandle, &sRmask);
+
+        lStatus = select((m_iIOHandle+1), &sRmask, 0, 0, &sTimeout);
+
+        if ( lStatus <= 0 )
+        {
+            WSASetLastError (WSAETIMEDOUT);
+            pzBuffer[0] = '\0';
+            lMsgLen = -1;
+            goto RET;
+        }
+
+        lNumBytes = recv(m_iIOHandle, &pzBuffer[lMsgLen], lBufferSize-lMsgLen-1, 0);
+
+        if ( lNumBytes <= 0 )
+        {
+            pzBuffer[0] = '\0';
+            lMsgLen = -1;
+            goto RET;
+        }
+
+        lMsgLen += lNumBytes;
+        pzBuffer[lMsgLen] = '\0';
+
+        //
+        // check to see if we got the entire line
+        //
+        if ( (pzPtr = strchr (pzBuffer, '\r')) != NULL )
+        {
+            bEol = TRUE;
+            *pzPtr = '\0';
+        }
+    }
+
+RET:
+    return strlen(pzBuffer);
+}
+
+
+
+long CMTSnpp::mSend(const STD(string) &sBuffer)
+/***************************************************************************
+**
+** CMTSnpp::mSend
+**
+** Purpose:
+**
+** Returns:
+**
+** History: 11-Jun-1998 John Ferguson   Initial Creation
+**
+***************************************************************************/
+{
+    return send(m_iIOHandle, sBuffer.c_str(), sBuffer.length(), 0);
+}
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CMTPagew  wrapper class
+//
+// The wrapper class member functions simply call the the coresponding functions
+// in the implementation class using the pointer to the implementation class.
+// This allows for changes to be made to the implementation class without
+// effecting the wrapper class that's exported to a DLL or to the VMS RTL. If
+// a change were to be made to the exposed class all apps using the class
+// would require a re-compile to work correctly.
+//
+//////////////////////////////////////////////////////////////////////////////
+
+
+CMTPagew::CMTPagew(void)
+{
+    mImp = new CMTPageImp;
+}
+
+
+
+CMTPagew::CMTPagew(const STD(string)& InToList,
+                   const STD(string)& InMessage,
+                   const STD(string)& InFrom,
+                   const STD(string)& InAfter,
+                   const STD(string)& InSystem) 
+{
+    STD(string) ToList;
+    STD(string) Message;
+    STD(string) From;
+    STD(string) After;
+    STD(string) System;
+
+
+    //
+    // Make sure the that string passed in is in the UTF8 codepage
+    //
+    hrMbsToUtf8(ToList,  InToList);
+    hrMbsToUtf8(Message, InMessage);
+    hrMbsToUtf8(From,    InFrom);
+    hrMbsToUtf8(After,   InAfter);
+    hrMbsToUtf8(System,  InSystem);    
+    
+    mImp = new CMTPageImp;
+
+    mImp->Send(ToList,
+               Message,
+               From,
+               After,
+               System);
+}
+
+
+
+CMTPagew::CMTPagew(const wchar_t* InToList,
+                   const wchar_t* InMessage,
+                   const wchar_t* InFrom,
+                   const wchar_t* InAfter,
+                   const wchar_t* InSystem)
+{
+    STD(string) ToList;
+    STD(string) Message;
+    STD(string) From;
+    STD(string) After;
+    STD(string) System;
+
+
+
+    //
+    // The the wide character array passed in to a UTF8 string
+    //
+    hrWcsToUtf8(ToList,  InToList);
+    hrWcsToUtf8(Message, InMessage);
+    hrWcsToUtf8(From,    InFrom);
+    hrWcsToUtf8(After,   InAfter);
+    hrWcsToUtf8(System,  InSystem);    
+    
+    mImp = new CMTPageImp;
+
+    mImp->Send(ToList,
+               Message,
+               From,
+               After,
+               System);
+}
+
+
+
+CMTPagew::~CMTPagew(void)
+{
+    delete mImp;
+}
+
+
+
+CMTPagew &CMTPagew::operator=(const CMTPagew &Page)
+{
+    if ( this == &Page ) goto RET;
+
+    mImp = new CMTPageImp(*Page.mImp);
+
+  RET:
+    return *this;
+}
+
+
+
+CMTPagew::CMTPagew(const CMTPagew& Page)
+{
+    mImp = new CMTPageImp(*Page.mImp);
+}
+
+
+
+void CMTPagew::SetTo(const STD(string)& InToList)
+{
+    STD(string) ToList;
+
+    hrMbsToUtf8(ToList, InToList);
+
+    mImp->SetTo(ToList);
+}
+
+
+
+void CMTPagew::SetTo(const wchar_t* InToList)
+{
+    STD(string) ToList;
+
+    hrWcsToUtf8(ToList, InToList);
+
+    mImp->SetTo(ToList);
+}
+
+
+
+void CMTPagew::AppendTo(const STD(string)& InVal)
+{
+    STD(string) sVal;
+
+    hrMbsToUtf8(sVal, InVal);
+
+    mImp->AppendTo(sVal);
+}
+
+
+
+void CMTPagew::AppendTo(const wchar_t* InVal)
+{
+    STD(string) sVal;
+
+    hrWcsToUtf8(sVal, InVal);
+
+    mImp->AppendTo(sVal);
+}
+
+
+
+const wchar_t* CMTPagew::GetTo(void)
+{
+    return mImp->GetTow();
+}
+
+
+
+const STD(string)& CMTPagew::sGetTo(void)
+{
+    return mImp->GetTo();
+}
+
+
+
+void CMTPagew::SetFrom(const STD(string)& InVal)
+{
+    STD(string) sVal;
+
+    hrMbsToUtf8(sVal, InVal);
+
+    mImp->SetFrom(sVal);
+}
+
+
+
+void CMTPagew::SetFrom(const wchar_t* InVal)
+{
+    STD(string) sVal;
+
+    hrWcsToUtf8(sVal, InVal);
+
+    mImp->SetFrom(sVal);
+}
+
+
+
+const wchar_t* CMTPagew::GetFrom(void)
+{
+    return mImp->GetFromw();
+}
+
+
+
+const STD(string)& CMTPagew::sGetFrom(void)
+{
+    return mImp->GetFrom();
+}
+
+
+
+void CMTPagew::SetMessage(const STD(string)& InVal)
+{
+    STD(string) sVal;
+
+    hrMbsToUtf8(sVal, InVal);
+
+    mImp->SetPageMsg(sVal);
+}
+
+
+
+void CMTPagew::SetMessage(const wchar_t* InVal)
+{
+    STD(string) sVal;
+
+    hrWcsToUtf8(sVal, InVal);
+
+    mImp->SetPageMsg(sVal);
+}
+
+
+
+void CMTPagew::SetPageMsg(const STD(string)& InVal)
+{
+    STD(string) sVal;
+
+    hrMbsToUtf8(sVal, InVal);
+
+    mImp->SetPageMsg(sVal);
+}
+
+
+
+void CMTPagew::SetPageMsg(const wchar_t* InVal)
+{
+    STD(string) sVal;
+
+    hrWcsToUtf8(sVal, InVal);
+
+    mImp->SetPageMsg(sVal);
+}
+
+
+
+const wchar_t* CMTPagew::GetMessageA(void)
+{
+    return mImp->GetPageMsgw();
+}
+
+
+
+const STD(string)& CMTPagew::sGetMessage(void)
+{
+    return mImp->GetPageMsg();
+}
+
+
+
+const wchar_t* CMTPagew::GetPageMsg(void)
+{
+    return mImp->GetPageMsgw();
+}
+
+
+
+const STD(string)& CMTPagew::sGetPageMsg(void)
+{
+    return mImp->GetPageMsg();
+}
+
+
+
+void CMTPagew::SetAfter(const STD(string)& InVal)
+{
+    STD(string) sVal;
+
+    hrMbsToUtf8(sVal, InVal);
+
+    mImp->SetAfter(sVal);
+}
+
+
+
+void CMTPagew::SetAfter(const wchar_t* InVal)
+{
+    STD(string) sVal;
+
+    hrWcsToUtf8(sVal, InVal);
+
+    mImp->SetAfter(sVal);
+}
+
+
+
+const wchar_t* CMTPagew::GetAfter(void)
+{
+    return mImp->GetAfterw();
+}
+
+
+
+const STD(string)& CMTPagew::sGetAfter(void)
+{
+    return mImp->GetAfter();
+}
+
+
+
+void CMTPagew::SetSystem(const STD(string)& InVal)
+{
+    STD(string) sVal;
+
+    hrMbsToUtf8(sVal, InVal);
+
+    mImp->SetSystem(sVal);
+}
+
+
+
+void CMTPagew::SetSystem(const wchar_t* InVal)
+{
+    STD(string) sVal;
+
+    hrWcsToUtf8(sVal, InVal);
+
+    mImp->SetSystem(sVal);
+}
+
+
+
+const wchar_t* CMTPagew::GetSystem(void)
+{
+    return mImp->GetSystemw();
+}
+
+
+
+const STD(string)& CMTPagew::sGetSystem(void)
+{
+    return mImp->GetSystem();
+}
+
+
+
+void CMTPagew::Reset(void)
+{
+    mImp->Reset();
+}
+
+
+
+long CMTPagew::Send(void)
+{
+    return mImp->Send();
+}
+
+
+
+long CMTPagew::Send(const STD(string)& InToList,
+                         const STD(string)& InMessage,
+                         const STD(string)& InFrom,
+                         const STD(string)& InAfter,
+                         const STD(string)& InSystem)
+{
+    STD(string) ToList;
+    STD(string) Message;
+    STD(string) From;
+    STD(string) After;
+    STD(string) System;
+
+
+
+    //
+    // Make sure the that string passed in is in the UTF8 codepage
+    //
+    hrMbsToUtf8(ToList,  InToList);
+    hrMbsToUtf8(Message, InMessage);
+    hrMbsToUtf8(From,    InFrom);
+    hrMbsToUtf8(After,   InAfter);
+    hrMbsToUtf8(System,  InSystem);    
+    
+    return mImp->Send(ToList,
+                      Message,
+                      From,
+                      After,
+                      System);
+}
+
+
+
+long CMTPagew::Send(const wchar_t* InToList,
+                         const wchar_t* InMessage,
+                         const wchar_t* InFrom,
+                         const wchar_t* InAfter,
+                         const wchar_t* InSystem)
+{
+    STD(string) ToList;
+    STD(string) Message;
+    STD(string) From;
+    STD(string) After;
+    STD(string) System;
+
+
+
+    //
+    // The the wide character array passed in to a UTF8 string
+    //
+    hrWcsToUtf8(ToList,  InToList);
+    hrWcsToUtf8(Message, InMessage);
+    hrWcsToUtf8(From,    InFrom);
+    hrWcsToUtf8(After,   InAfter);
+    hrWcsToUtf8(System,  InSystem);    
+    
+    return mImp->Send(ToList,
+                      Message,
+                      From,
+                      After,
+                      System);
+}
+
+
+
+long CMTPagew::GetStatusCode(void)
+{
+    return mImp->GetStatusCode();
+}
+
+
+
+const wchar_t* CMTPagew::GetStatusText(void)
+{
+    return mImp->GetStatusTextw();
+}
+
+
+
+const STD(string)& CMTPagew::sGetStatusText(void)
+{
+    return mImp->GetStatusText();
+}
+
+
+
+long CMTPagew::Connect(const STD(string)& InVal)
+{
+    STD(string) sVal;
+
+    hrMbsToUtf8(sVal, InVal);
+
+    return mImp->Connect(sVal);
+}
+
+
+
+long CMTPagew::Connect(const wchar_t* InVal)
+{
+    STD(string) sVal;
+
+    hrWcsToUtf8(sVal, InVal);
+
+    return mImp->Connect(sVal);
+}
+
+
+
+void CMTPagew::Disconnect(void)
+{
+    mImp->Disconnect();
+}
+
+
+
+long CMTPagew::Lookup(const STD(string)& InxItem, CMTPagerwVect& InOutvPagers)
+{
+    STD(string) xItem;
+
+    hrMbsToUtf8(xItem, InxItem);
+
+    return mImp->Lookup(xItem, InOutvPagers);
+}
+
+
+
+long CMTPagew::Lookup(const wchar_t* InwsItem, CMTPagerwVect& InOutvPagers)
+{
+    STD(string) xItem;
+
+    hrWcsToUtf8(xItem, InwsItem);
+
+    return mImp->Lookup(xItem, InOutvPagers);
+}
+
+
+
+long CMTPagew::GetServiceDataFromId(long     InPageSvcId,
+                                         wchar_t* OutPageSvcCode,
+                                         long     InPageSvcCodeSiz,
+                                         wchar_t* OutPageSvcDesc,
+                                         long     InPageSvcDescSiz)
+{
+    STD(string) xPageSvcCode;
+    STD(string) xPageSvcDesc;
+    
+    long   bRetStat = mImp->GetServiceDataFromId(InPageSvcId, xPageSvcCode, xPageSvcDesc);
+
+    wchar_t*    wPageSvcCode;
+    wchar_t*    wPageSvcDesc;
+    
+    hrMbsToWcs(&wPageSvcCode, xPageSvcCode.c_str());
+    wcsncpy(OutPageSvcCode, wPageSvcCode, InPageSvcCodeSiz);
+    SAFE_DELETE(wPageSvcCode);
+    
+    hrMbsToWcs(&wPageSvcDesc, xPageSvcDesc.c_str());
+    wcsncpy(OutPageSvcDesc, wPageSvcDesc, InPageSvcDescSiz);
+    SAFE_DELETE(wPageSvcDesc);
+
+    return bRetStat;
+}
+
+
+
+long CMTPagew::GetServiceDataFromId(long         InPageSvcId,
+                                         STD(string)& OutPageSvcCode,
+                                         STD(string)& OutPageSvcDesc)
+{
+    return mImp->GetServiceDataFromId(InPageSvcId, OutPageSvcCode, OutPageSvcDesc);
+}
+
+
+
+long CMTPagew::GetPagerTypeDataFromId(long       InPagerTypeId,
+                                           wchar_t*   OutPagerTypeCode,
+                                           long       InPagerTypeCodeSiz,
+                                           wchar_t*   OutPagerTypeDesc,
+                                           long       InPagerTypeDescSiz)
+{
+    STD(string) xPagerTypeCode;
+    STD(string) xPagerTypeDesc;
+    
+    long   bRetStat = mImp->GetPagerTypeDataFromId(InPagerTypeId, xPagerTypeCode, xPagerTypeDesc);
+
+    wchar_t*    wPagerTypeCode;
+    wchar_t*    wPagerTypeDesc;
+    
+    hrMbsToWcs(&wPagerTypeCode, xPagerTypeCode.c_str());
+    wcsncpy(OutPagerTypeCode, wPagerTypeCode, InPagerTypeCodeSiz);
+    SAFE_DELETE(wPagerTypeCode);
+    
+    hrMbsToWcs(&wPagerTypeDesc, xPagerTypeDesc.c_str());
+    wcsncpy(OutPagerTypeDesc, wPagerTypeDesc, InPagerTypeDescSiz);
+    SAFE_DELETE(wPagerTypeDesc);
+
+    return bRetStat;
+}
+
+
+
+long CMTPagew::GetPagerTypeDataFromId(long           InPagerTypeId,
+                                           STD(string)&   OutPagerTypeCode,
+                                           STD(string)&   OutPagerTypeDesc)
+{
+    return mImp->GetPagerTypeDataFromId(InPagerTypeId, OutPagerTypeCode, OutPagerTypeDesc);
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CMTPagerw  wrapper class
+//
+// The wrapper class member functions simply call the the coresponding functions
+// in the implementation class using the pointer to the implementation class.
+// This allows for changes to be made to the implementation class without
+// effecting the wrapper class that's exported to a DLL or to the VMS RTL. If
+// a change were to be made to the exposed class all apps using the class
+// would require a re-compile to work correctly.
+//
+//////////////////////////////////////////////////////////////////////////////
+
+
+CMTPagerw::CMTPagerw(void)
+{
+    mImp = new CMTPagerImp;
+}
+
+
+
+CMTPagerw::CMTPagerw(const STD(string)& xData)
+{
+    mImp = new CMTPagerImp(xData);
+}
+
+
+
+CMTPagerw::~CMTPagerw(void)
+{
+    delete mImp;
+}
+
+
+
+CMTPagerw& CMTPagerw::operator=(const CMTPagerw &Pager)
+{
+    if ( this == &Pager ) goto RET;
+
+    mImp = new CMTPagerImp(*Pager.mImp);
+
+  RET:
+    return *this;
+}
+
+
+
+CMTPagerw::CMTPagerw(const CMTPagerw& Pager)
+{
+    mImp = new CMTPagerImp(*Pager.mImp);
+}
+
+
+
+const wchar_t*  CMTPagerw::GetStatusCode(void)
+{
+    return mImp->GetStatusCodew();
+}
+
+
+
+const STD(string)& CMTPagerw::sGetStatusCode(void)
+{
+    return mImp->GetStatusCode();
+}
+
+
+
+const wchar_t* CMTPagerw::GetSubscriberName(void)
+{
+    return mImp->GetSubscriberNamew();
+}
+
+
+
+const STD(string)& CMTPagerw::sGetSubscriberName(void)
+{
+    return mImp->GetSubscriberName();
+}
+
+
+
+const wchar_t* CMTPagerw::GetPagerNumber(void)
+{
+    return mImp->GetPagerNumberw();
+}
+
+
+
+const STD(string)& CMTPagerw::sGetPagerNumber(void)
+{
+    return mImp->GetPagerNumber();
+}
+
+
+
+const wchar_t* CMTPagerw::GetDeliveryMask(void)
+{
+    return mImp->GetDeliveryMaskw();
+}
+
+
+
+const STD(string)& CMTPagerw::sGetDeliveryMask(void)
+{
+    return mImp->GetDeliveryMask();
+}
+
+
+
+unsigned long CMTPagerw::GetContactWorkerNo(void)
+{
+    return mImp->GetContactWorkerNo();
+}
+
+
+
+const wchar_t* CMTPagerw::GetAlphaNumericFlag(void)
+{
+    return mImp->GetAlphaNumericFlagw();
+}
+
+
+
+const STD(string)& CMTPagerw::sGetAlphaNumericFlag(void)
+{
+    return mImp->GetAlphaNumericFlag();
+}
+
+
+
+unsigned long CMTPagerw::GetMaxMessageSize(void)
+{
+    return mImp->GetMaxMessageSize();
+}
+
+
+
+long CMTPagerw::GetGMTOffset(void)
+{
+    return mImp->GetGMTOffset();
+}
+
+
+
+long CMTPagerw::GetServiceId(void)
+{
+    return mImp->GetServiceId();
+}
+
+
+
+long CMTPagerw::GetPagerTypeId(void)
+{
+    return mImp->GetPagerTypeId();
+}
+
+
+
+void CMTPagerw::PrintPagerData(void)
+{
+    mImp->PrintPagerData();
+}
+
+#ifdef _WIN32
+#pragma message( "  ***  Make sure that the most current CMTIO Stream functionality is here.  (Currently: 16-May-2003 11:37)  ***" )
+#endif
+
+
+long CMTSnpp::StreamReadLine(STD(string)& out_xBuffer, const long& in_lTimeOut)
+/*****************************************************************************
+** NOTE:    This function was copied from the MTIO.CPP module of the 
+**          mtpagelib project.  Unfortuneately the dependencies are too 
+**          great at this time to just call the code from the dll.
+**
+**          The MTIO.CPP module should be checked from time to time to see
+**          if this code should be updated as well.
+**
+** CHANGES REQUIRED:
+**          - Delete all Scope and TRACE lines
+**          - Delete all the try/catch code
+**          - Change all the throw code to return -2; unless there is a more
+**            appropriate error_code.
+**          - Remove the conditional containing the  if ( "TCP" == m_xLetterClassType )
+**            so that it only leaves the line for the TCP code.
+**          - Change all string declarations to STD(string)
+**
+** DATE OF MTIO.CPP MODULE AT THE TIME THIS CODE WAS COPIES WAS:
+**
+**              16-May-2003 11:37
+**
+******************************************************************************/
+{
+
+//    long            lBuffLen = 0;
+    unsigned long   lElapsedTime = 0;
+    int             nErrorCode;
+    STD(string)     xErrText;
+    struct timeval* p_sTimeOut = NULL;
+    struct timeval  sTimeOut = {0, 0};
+    time_t          sStartTime, sCurrentTime;
+
+    out_xBuffer.erase();
+
+    if ( in_lTimeOut < 0 )
+    {
+        return -2;
+    }
+    else if ( in_lTimeOut == m_lINFINITE_WAIT )
+    {
+        p_sTimeOut = NULL;     
+    }
+    else if ( in_lTimeOut >= 0 )
+    {
+        sTimeOut.tv_sec = in_lTimeOut;
+        p_sTimeOut = &sTimeOut;
+    }
+       
+    bool bTimedOut = false;
+    time ( &sStartTime );
+
+
+    // If there is a \n at the beginning of the buffer, throw it away.
+    if ( '\r' == m_cEOLDelimiter && '\n' == m_zBuffer[0] )
+    {
+        strcpy(m_zBuffer, m_zBuffer+1);
+    }
+
+    if ( '\n' == m_cEOLDelimiter && '\r' == m_zBuffer[0] )
+    {
+        strcpy(m_zBuffer, m_zBuffer+1);
+    }
+
+    // while we haven't seen an CR and we haven't timed out, read
+    while ( !strstr(m_zBuffer,"\r") && !strstr(m_zBuffer,"\n") && !bTimedOut )
+    {
+        //Subtract 1 to allow for a NULL terminator at the end
+        long lBytes2Read = m_lBufferSize - (strlen(m_zBuffer)) - 1;
+
+        if ( lBytes2Read < 1 )
+        {
+            break;
+        }
+
+        FD_ZERO(&m_sRead_FDS);
+        FD_SET(m_iIOHandle, &m_sRead_FDS);
+
+        int iResult = select((m_iIOHandle+1), &m_sRead_FDS, NULL, NULL, p_sTimeOut);
+
+        if ( iResult == -1 )
+        {
+#if defined (_WIN32)
+            nErrorCode = WSAGetLastError();
+            xErrText = "I/O has been terminated.";
+#else
+            nErrorCode  = errno;
+            xErrText = strerror(nErrorCode);
+#endif
+
+            return nErrorCode;
+        }
+
+        if ( iResult >= 1 ) //from select, could be closed connection 
+        {
+            long lOldLength = strlen(m_zBuffer);
+            long lRecvResult = 0;
+
+            // Check that the bit is really set for this socket
+            if ( FD_ISSET(m_iIOHandle, &m_sRead_FDS) )
+            {
+                lRecvResult = recv(m_iIOHandle, (m_zBuffer + lOldLength), lBytes2Read, 0);
+
+                if ( lRecvResult <= 0 )
+                {
+                    // 0 is disconnected, -1 is error,
+                    if ( lRecvResult == 0 )
+                    {
+                        nErrorCode  = 0;
+                        xErrText = "Connection was gracefully closed by the remote end";
+                    }
+                    else
+                    {
+#if defined (_WIN32)
+                        nErrorCode = WSAGetLastError();
+                        xErrText = "I/O has been terminated.";
+#else
+                        nErrorCode  = errno;
+                        xErrText = strerror(nErrorCode);
+#endif
+                    }
+
+                    return nErrorCode;
+                } 
+            }
+                
+            // null terminate m_zBuffer
+            m_zBuffer[lOldLength + lRecvResult] = '\0';
+
+            if ( '\r' == m_cEOLDelimiter && '\n' == m_zBuffer[0] )
+            {
+                strcpy(m_zBuffer, m_zBuffer+1);
+            }
+
+            if ( '\n' == m_cEOLDelimiter && '\r' == m_zBuffer[0] )
+            {
+                strcpy(m_zBuffer, m_zBuffer+1);
+            }
+        }  // end of if select returned 1
+
+
+        //Update the timer
+
+        // If we have a non-zero time out value passed in, calculate the 
+        // elapsed time; otherwise, we are waiting indefinitely for a line
+        if ( p_sTimeOut != NULL )   
+        {
+            time(&sCurrentTime);
+
+            lElapsedTime = (unsigned long) sCurrentTime - sStartTime;                
+
+            if ( (long)lElapsedTime >= in_lTimeOut )
+            {
+                bTimedOut = true;
+            }
+            else
+            {
+                p_sTimeOut->tv_sec = in_lTimeOut - lElapsedTime;
+            }
+        }
+             
+    }  // end of while ( !strstr(...
+    // I either have a line, or I have timed out.
+        
+
+    char *pcEOL;
+    char *pcCR = strstr(m_zBuffer, "\r");
+    char *pcLF = strstr(m_zBuffer, "\n");
+
+
+    if ( pcCR && pcLF )
+    {
+        //Use the EOL char which came first - CR or LF
+        pcEOL = ( pcCR < pcLF ) ? pcCR : pcLF;
+    }
+    else if ( pcCR || pcLF ) 
+    {
+        //Use whichever EOL char was found (i.e. not NULL)
+        pcEOL = ( pcCR != NULL ) ? pcCR : pcLF;
+    }
+    else
+    {
+        pcEOL = NULL;
+    }
+
+    // DEBUG
+    //TRACEF_TRACE((">>After read, contents of m_zBuffer.\n"));
+    //DTRACEF_HEXDUMP(TRACE_TRC, m_zBuffer, strlen(m_zBuffer));
+    if ( pcEOL )
+    {
+        m_cEOLDelimiter = *pcEOL;
+
+        // By making the value pointed to by pcEOL to NULL,
+        // we can copy the value till that NULL into zBuffer
+        *pcEOL = '\0';
+
+        // DEBUG
+        //TRACEF_TRACE((">>After replacing \n\r with \0, contents of m_zBuffer.\n"));
+        //DTRACEF_HEXDUMP(TRACE_TRC, m_zBuffer, strlen(m_zBuffer));
+
+        // only copy up to the \0
+        out_xBuffer = m_zBuffer;
+
+        // if there is any value beyond \0, store it in m_zBuffer
+        if ( strlen((pcEOL+1)) > 0 )
+        {
+            strcpy(m_zBuffer, (pcEOL + 1)); 
+        }
+        else
+        {
+            m_zBuffer[0] = '\0';
+        }
+            
+        return out_xBuffer.length(); // successfully read
+    }
+
+    if ( !bTimedOut)
+    {
+        return -2;
+    }
+
+    return -1; // timed out
+}
+
+
+
+long CMTSnpp::StreamWrite(const STD(string)& in_xData)
+/*****************************************************************************
+** NOTE:    This function was copied from the MTIO.CPP module of the 
+**          mtpagelib project.  Unfortuneately the dependencies are too 
+**          great at this time to just call the code from the dll.
+**
+**          The MTIO.CPP module should be checked from time to time to see
+**          if this code should be updated as well.
+**
+** CHANGES REQUIRED:
+**          - Delete all Scope and TRACE lines
+**          - Delete all the try/catch code
+**          - Change all the throw code to return -2; unless there is a more
+**            appropriate error_code.
+**          - Remove the conditional containing the  if ( "TCP" == m_xLetterClassType )
+**            so that it only leaves the line for the TCP code.
+**          - Change all string declarations to STD(string)
+**
+** DATE OF MTIO.CPP MODULE AT THE TIME THIS CODE WAS COPIES WAS:
+**
+**              16-May-2003 11:37
+**
+******************************************************************************/
+{
+    
+    int iBytesSent = 0;
+    int iBytesToSend = in_xData.length();
+
+    strcpy(m_zBuffer, in_xData.c_str());
+
+    while ( iBytesSent < iBytesToSend )
+    {
+        int         nErrorCode;
+        STD(string) xErrText;
+        int         iSendResult;
+        short       nSelectResult;
+        fd_set      sWrite_FDS;
+
+        FD_ZERO(&sWrite_FDS);
+        FD_SET(m_iIOHandle, &sWrite_FDS);
+
+        nSelectResult = select((m_iIOHandle+1), NULL, &sWrite_FDS, NULL, 0);
+            
+        if ( -1 == nSelectResult )
+        {
+#         if defined (_WIN32)
+            nErrorCode = WSAGetLastError();
+            xErrText = "I/O has been terminated.";
+#         else
+            nErrorCode  = errno;
+            xErrText = strerror(nErrorCode);
+#         endif
+
+            return nErrorCode;
+        }
+        else if ( 1 <= nSelectResult )
+        {
+            if ( FD_ISSET(m_iIOHandle, &sWrite_FDS) )
+            {
+                iSendResult = send(m_iIOHandle, (m_zBuffer + iBytesSent), (iBytesToSend - iBytesSent), 0);
+
+                if ( iSendResult > 0 )
+                {
+                    iBytesSent += iSendResult;
+                }
+                else if ( iSendResult == 0 )
+                {
+                    break;
+                }
+                else if ( iSendResult == -1 )    // from send
+                {
+#                 if defined (_WIN32)
+                    nErrorCode = WSAGetLastError();
+                    xErrText = "I/O has been terminated.";
+#                 else
+                    nErrorCode  = errno;
+                    xErrText = strerror(nErrorCode);
+#                 endif
+
+                    return nErrorCode;
+                }
+            }    
+        }
+
+	    memset(m_zBuffer, 0, m_lBufferSize);
+    }
+
+    return 1;
+}
+
+
+
+long CMTSnpp::StreamWriteLine(const STD(string) &in_xData)
+/*****************************************************************************
+** NOTE:    This function was copied from the MTIO.CPP module of the 
+**          mtpagelib project.  Unfortuneately the dependencies are too 
+**          great at this time to just call the code from the dll.
+**
+**          The MTIO.CPP module should be checked from time to time to see
+**          if this code should be updated as well.
+**
+** CHANGES REQUIRED:
+**          - Delete all Scope and TRACE lines
+**          - Delete all the try/catch code
+**          - Added a return
+**
+** DATE OF MTIO.CPP MODULE AT THE TIME THIS CODE WAS COPIES WAS:
+**
+**              16-May-2003 11:37
+**
+******************************************************************************/
+{
+
+    return StreamWrite( (in_xData + "\r\n") );
+}
+
+
+END_NAMESPACE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //==============================================================================
 //              <Standard Micron Copyright Information>
 //
