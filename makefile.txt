@@ -1,3 +1,102 @@
+Test linking starts ...!!!
+/mu/bin/g++ -o  libmtmailpage_shared_tester mailpagetest/mailpagetest.o -pthread -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,/mu/dev/corplib/cppunit/1.15.2-gcc1131-rhel9-64/lib:/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib:/mu/mtsdk/corplib/gcc1131/lib:~/IOSS-lib-MTMailPageRHEL9-LinuxTEST:~/IOSS-lib-MTMailPageRHEL9-LinuxTEST/libMTMailPage.so: -L/mu/dev/corplib/cppunit/1.15.2-gcc1131-rhel9-64/lib -L/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib -L/mu/mtsdk/corplib/gcc1131/lib -L~/IOSS-lib-MTMailPageRHEL9-LinuxTEST -L~/IOSS-lib-MTMailPageRHEL9-LinuxTEST/libMTMailPage.so -lMTMailPage
+/usr/bin/ld: cannot find -lMTMailPage
+
+
+[aalugani@bol9dev01 IOSS-lib-MTMailPageRHEL9-LinuxTEST]$ ll
+total 6020
+-rw-rw-r-- 1 aalugani aalugani   10570 Oct 20 00:53  cmtmail.cpp
+-rw-rw-r-- 1 aalugani aalugani   13585 Oct 20 00:53  cmtmail.h
+-rw-rw-r-- 1 aalugani aalugani  360687 Oct 20 00:53  cmtmailw
+-rw-rw-r-- 1 aalugani aalugani  170272 Oct 20 00:53  cmtmailw.cpp
+-rw-rw-r-- 1 aalugani aalugani    8911 Oct 20 00:53  cmtmailw.h
+-rw-r--r-- 1 aalugani aalugani  883928 Oct 20 03:03  cmtmailw.o
+-rw-rw-r-- 1 aalugani aalugani    5542 Oct 20 00:53  cmtpage.cpp
+-rw-rw-r-- 1 aalugani aalugani    8765 Oct 20 00:53  cmtpage.h
+-rw-rw-r-- 1 aalugani aalugani   92744 Oct 20 00:53 'cmtpagew - Copy.cpp'
+-rw-rw-r-- 1 aalugani aalugani   90946 Oct 20 00:53  cmtpagew.cpp
+-rw-rw-r-- 1 aalugani aalugani    7099 Oct 20 00:53  cmtpagew.h
+-rw-r--r-- 1 aalugani aalugani 2014600 Oct 20 03:03  cmtpagew.o
+lrwxrwxrwx 1 aalugani aalugani      20 Oct 20 03:03  libMTMailPage.so -> libMTMailPage.so.dev
+-rwxr-xr-x 1 aalugani aalugani 1305992 Oct 20 03:03  libMTMailPage.so.dev
+drwxrwxr-x 2 aalugani aalugani    4096 Oct 20 03:03  mailpagetest
+drwxrwxr-x 2 aalugani aalugani    4096 Oct 20 00:54  mailtest
+-rw-rw-r-- 1 aalugani aalugani    9402 Oct 20 03:00  Makefile
+-rw-rw-r-- 1 aalugani aalugani    1698 Oct 20 00:53  Makefile.lib_config
+-rw-rw-r-- 1 aalugani aalugani    3935 Oct 20 00:53  mtdattyp.h
+-rw-rw-r-- 1 aalugani aalugani   16500 Oct 20 00:53  mtmailc.cpp
+-rw-rw-r-- 1 aalugani aalugani   15354 Oct 20 00:53  mtmailcw.cpp
+-rw-rw-r-- 1 aalugani aalugani    5653 Oct 20 00:53  mtmail.h
+-rw-rw-r-- 1 aalugani aalugani   34304 Oct 20 00:53  MTMailPage100-JFERGUSON.suo
+-rw-rw-r-- 1 aalugani aalugani    3094 Oct 20 00:53  MTMailPage100.sln
+-rw-rw-r-- 1 aalugani aalugani   34304 Oct 20 00:53  MTMailPage100.suo
+-rw-rw-r-- 1 aalugani aalugani   61952 Oct 20 00:53  MTMailPage100.v12.suo
+-rw-rw-r-- 1 aalugani aalugani   10252 Oct 20 00:53  MTMailPage100.vcxproj
+-rw-rw-r-- 1 aalugani aalugani    2718 Oct 20 00:53  MTMailPage100.vcxproj.filters
+-rw-rw-r-- 1 aalugani aalugani     143 Oct 20 00:53  MTMailPage100.vcxproj.user
+-rw-rw-r-- 1 aalugani aalugani    4610 Oct 20 00:53  MTMailPage140.rc
+-rw-rw-r-- 1 aalugani aalugani    1307 Oct 20 00:53  MTMailPage140.sln
+-rw-rw-r-- 1 aalugani aalugani    8046 Oct 20 00:53  MTMailPage140.vcxproj
+-rw-rw-r-- 1 aalugani aalugani    2721 Oct 20 00:53  MTMailPage140.vcxproj.filters
+-rw-rw-r-- 1 aalugani aalugani     165 Oct 20 00:53  MTMailPage140.vcxproj.user
+-rw-rw-r-- 1 aalugani aalugani    2109 Oct 20 00:53  MTMailPage71w.sln
+-rw-rw-r-- 1 aalugani aalugani   14336 Oct 20 00:53  MTMailPage71w.suo
+-rw-rw-r-- 1 aalugani aalugani    4721 Oct 20 00:53  MTMailPage71w.vcproj
+-rw-rw-r-- 1 aalugani aalugani    3071 Oct 20 00:53  MTMailPage80w.sln
+-rw-rw-r-- 1 aalugani aalugani  101888 Oct 20 00:53  MTMailPage80w.suo
+-rw-rw-r-- 1 aalugani aalugani    9998 Oct 20 00:53  MTMailPage80w.vcproj
+-rw-rw-r-- 1 aalugani aalugani    1395 Oct 20 00:53  MTMailPage80w.vcproj.WINNTDOM.jferguson.user
+-rw-rw-r-- 1 aalugani aalugani   54195 Oct 20 00:53  mtmailpage.cpp
+-rw-rw-r-- 1 aalugani aalugani    5539 Oct 20 00:53  mtmailpage.dsp
+-rw-rw-r-- 1 aalugani aalugani    1801 Oct 20 00:53  mtmailpage.dsw
+-rw-rw-r-- 1 aalugani aalugani    2725 Oct 20 00:53  mtmailpage.h
+-rw-r--r-- 1 aalugani aalugani  485864 Oct 20 03:03  mtmailpage.o
+-rw-rw-r-- 1 aalugani aalugani    5898 Oct 20 00:53  MTMailPage_Tech.dsp
+-rw-rw-r-- 1 aalugani aalugani    2062 Oct 20 00:53  MTMailPage_Tech.dsw
+drwxrwxr-x 2 aalugani aalugani    4096 Oct 20 00:54  mtmailpagetest
+-rw-rw-r-- 1 aalugani aalugani    5173 Oct 20 00:53  mtmailw.h
+-rw-rw-r-- 1 aalugani aalugani   11259 Oct 20 00:53  mtpagec.cpp
+-rw-rw-r-- 1 aalugani aalugani   10925 Oct 20 00:53  mtpagecw.cpp
+-rw-rw-r-- 1 aalugani aalugani    3606 Oct 20 00:53  mtpage.h
+-rw-rw-r-- 1 aalugani aalugani    3708 Oct 20 00:53  mtpagew.h
+-rw-rw-r-- 1 aalugani aalugani    2358 Oct 20 00:53  namespace.h
+drwxrwxr-x 2 aalugani aalugani    4096 Oct 20 00:55  pagetest
+-rw-rw-r-- 1 aalugani aalugani     985 Oct 20 00:53  README.md
+-rw-rw-r-- 1 aalugani aalugani    3514 Oct 20 00:53  reentrant_netdb.h
+-rw-rw-r-- 1 aalugani aalugani     408 Oct 20 00:53  resource1.h
+-rw-rw-r-- 1 aalugani aalugani     407 Oct 20 00:53  resource2.h
+-rw-rw-r-- 1 aalugani aalugani     406 Oct 20 00:53  resource.h
+-rw-rw-r-- 1 aalugani aalugani    2403 Oct 20 00:53  Resource.rc
+-rw-rw-r-- 1 aalugani aalugani     417 Oct 20 00:53  resource_tech.h
+-rw-rw-r-- 1 aalugani aalugani    2687 Oct 20 00:53  Resource_Tech.rc
+-rw-rw-r-- 1 aalugani aalugani    3911 Oct 20 00:53  rtldll.h
+-rw-rw-r-- 1 aalugani aalugani   13582 Oct 20 00:53  sha1.cpp
+-rw-rw-r-- 1 aalugani aalugani    2576 Oct 20 00:53  sha1.h
+
+
+this is my wd
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #---------------------------------------------------------------------------#
 #  Makefile created for build and test CORPLIBS(cmtmailpage)
 #  
