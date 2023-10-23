@@ -1,3 +1,441 @@
+#---------------------------------------------------------------------------#
+#  Makefile created for build and test CORPLIBS(cmtmailpage)
+#  
+#  Created by: mmadhira@micron.com
+#  Date: 28/03/2023
+#---------------------------------------------------------------------------#
+
+#-----------------------------------##
+# Common variables Declration 
+#-----------------------------------##
+
+GCC=/mu/bin/gcc
+CXX=/mu/bin/g++
+TARGET_DEFINITIONS = _REENTRANT NDEBUG _M_DLL
+LIBRARY_NAME = MTMailPage
+LIB_NAME = libmtmailpage
+TEST_TARGET = libmtmailpage_shared_tester
+LINK = -shared
+LNS = ln -s
+LS	= ls -al
+CP	=	cp -a
+CHMOD = chmod 644
+CFLAGS= -fPIC
+CPPFLAGS = -g3 -O2 -fvisibility=hidden -Wno-deprecated-declarations -fPIC
+TEST_CPPFLAGS	= -g3 -O2 -fvisibility=hidden -Wno-deprecated-declarations -fPIC
+TARGET_LDFLAGS = -pthread
+CURR_DIR	=	$(PWD)
+
+# Checking for DEV/MUSYNC environment.
+ifeq ($(HOSTNAME), "bolmusyncprod02.micron.com")
+	CORPBUILD	=	/rhel-9-64-mu-dev/mtapps/corp/
+else
+	CORPBUILD	=	/mu/mtapps/corp/
+endif
+
+SH_FILE	=	CorpLibsReleaseScript.sh
+
+
+#---------------------------------
+# STAGE destination PATH.
+#--------------------------------
+
+INC_DESTINATION	= /home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/include  
+LIB_DESTINATION	= /home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib
+
+#-------------------------------
+# DEV MU destination PATH. 
+#--------------------------------
+
+MU_INC_DEST	= /mu/mtsdk/corplib/gcc1131/include 
+MU_LIB_DEST	= /mu/mtsdk/corplib/gcc1131/lib
+
+#-------------------------------
+# Master MU destination PATH. 
+#-------------------------------- 
+
+DELTA_MU_INC_DEST	= /rhel-9-64-mu-mstr/mtsdk/corplib/gcc1131/include 
+DELTA_MU_LIB_DEST	= /rhel-9-64-mu-mstr/mtsdk/corplib/gcc1131/lib 
+
+
+#-------------------------------------#
+# Shared libraries mtmailpage variables
+#-------------------------------------#
+#RUNTIME_PATH = /mu/mtsdk/corplib/gcc1131/lib:/home/sysprog/libraries/build/gcc1131-rhel9/libcmtexception_static -L.
+#LIBDIRS = /home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib /mu/mtsdk/corplib/gcc1131/lib /home/sysprog/libraries/build/gcc1131-rhel9/libcmtexception_static
+#LIBRARIES = 
+
+#SHARED_LIBS = -Wl,--enable-new-dtags -Wl,-rpath,$(RUNTIME_PATH) $(addprefix -L,$(LIBDIRS)) $(addprefix -l,$(LIBRARIES))
+#INCS += /mu/mtsdk/corplib/gcc1131/include /opt/ADO_Agent02/_work/7/s
+
+#----------------------------------------#
+# test libraries variables
+#----------------------------------------#
+
+TEST_RUNTIIME_PATH	= /mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib:/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib:/mu/mtsdk/corplib/gcc1131/lib:/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST
+
+TEST_LIBDIRS	=	/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib \
+					/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib \
+					/mu/mtsdk/corplib/gcc1131/lib \
+					/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST \
+					
+
+TEST_LIBRARIES	= MTMailPage
+
+TEST_SHARED_LIBS = -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,$(TEST_RUNTIIME_PATH) $(addprefix -L,$(TEST_LIBDIRS)) $(addprefix -l,$(TEST_LIBRARIES))
+
+TEST_INCS =	/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/include \
+			/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/include \
+			/mu/mtsdk/corplib/gcc1131/include \
+			/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST \
+
+
+#--------------#
+# Sorce files
+#--------------#
+
+CPPSRC_FILES = cmtmailw.cpp cmtpagew.cpp mtmailpage.cpp
+
+#------------------#
+#header files:
+#------------------#
+
+DEPLOYABLE_HEADERS = cmtmailw.h cmtpagew.h
+NON_DEPLOYABLE_HEADERS = mtmailpage.h
+
+#-------------------#
+#Test source files
+#------------------#
+
+TEST_SRCS = mailpagetest/mailpagetest.cpp #pagetest/pagetest.cpp mailtest/mailtest.cpp
+
+#------------------#
+# Test header files:
+#------------------#
+
+TEST_HDRS = ../cmtmailw.h ../cmtpagew.h ../mtmailpage.h
+
+TEST_DEFINITIONS = _REENTRANT NDEBUG _M_DLL
+
+
+TEST_LIBS = 
+
+#-----------------------------------#
+# Version tag updation for CORPLIB
+#-----------------------------------#
+
+ifeq ($(strip $(RELEASE)),)
+override LIB_EXT := dev
+else
+	ifneq (,$(findstring _,$(RELEASE)))
+		RELEASE_TEMP := $(RELEASE)
+		ifneq (,$(findstring /,$(RELEASE_TEMP)))
+			RELEASE_TEMP := $(shell echo $(RELEASE_TEMP) | awk -F\/ '{print $$1}')
+		endif
+			override LIB_EXT := $(shell echo $(RELEASE_TEMP) | awk -F\_ '{print $$2}')
+	else
+		override LIB_EXT := $(RELEASE)
+	endif
+endif
+
+override LIB_NAME          := lib$(LIBRARY_NAME)
+override SHARED_LIB        := $(LIB_NAME).so.$(LIB_EXT)
+
+#-----------------------------------------#
+# Make all libs
+#-----------------------------------------#
+.PHONY: all 
+all: build depends 
+
+#----------------------------------------#
+#Builing shared object (.so) for CORPLIB:
+#----------------------------------------#
+
+
+COBJS = $(CSRC_FILES:%.c=%.o )
+CPPOBJS = $(CPPSRC_FILES:%.cpp=%.o )
+
+OBJS = $(COBJS)  $(CPPOBJS)
+
+build: $(OBJS)
+	$(RM) *.so.*
+	$(CXX) $(LINK) -o $(SHARED_LIB) $(OBJS) $(TARGET_LDFLAGS) $(SHARED_LIBS)
+	$(RM) libMTMailPage.so 
+	$(LNS) $(SHARED_LIB) libMTMailPage.so  
+
+#---------------------------------#
+#Building object filed (.o) files:
+#---------------------------------#
+
+$(COBJS):%.o :%.c
+	@echo "COBJS compilation starts..."
+	$(GCC) -c $(CPPFLAGS) $(addprefix -D,$(TARGET_DEFINITIONS)) $(addprefix -I,$(INCS)) -o $@ $<
+	@echo "COBJS compilation completed"
+
+$(CPPOBJS):%.o :%.cpp
+	@echo "CORPLIB compilation starts..."
+	$(CXX) -c $(CPPFLAGS) $(addprefix -D,$(TARGET_DEFINITIONS)) $(addprefix -I,$(INCS)) -o $@ $<
+	@echo "CORPLIB compilation completed"
+
+#--------------------------------------#
+#Building shared object (.so) for test
+#--------------------------------------#
+TEST_OBJS= $(TEST_SRCS:%.cpp=%.o)
+
+.PHONY: depends 
+depends: $(TEST_OBJS)
+	@echo "Test linking starts ...!!!"
+	$(CXX) -o  $(TEST_TARGET) $(TEST_OBJS) $(TARGET_LDFLAGS) $(TEST_SHARED_LIBS)
+	@echo "Test linking completed"
+	@echo "Please use make test to run test-case"
+
+#------------------------------------------#
+#Building object filed (.o) files for test
+#------------------------------------------#
+
+$(TEST_OBJS): %.o :%.cpp
+	@echo "test compilation starts "
+	$(CXX) -c $(TEST_CPPFLAGS) $(addprefix -D,$(TEST_DEFINITIONS)) $(addprefix -I,$(TEST_INCS)) -o $@ $<
+	@echo "test compilation completed"
+
+#.SILENT:TEST_SC
+.PHONY:TEST_SC
+TEST_SC:
+		#@echo " TEST_SC --> $(LIB_NAME).so"
+		@echo " TEST_SC --> $(SHARED_LIB)--->$(LIB_EXT)"
+
+#--------------------------------#
+# clean the libraries:
+#--------------------------------#
+
+clean:
+	@echo " clean starts..."
+	$(RM) $(SHARED_LIB)
+	$(RM) $(TEST_TARGET)
+	$(RM) *.so 
+	$(RM) *.o
+
+#-----------------------------#
+# Running test-case
+#----------------------------#
+test:
+	@echo "running test case!!!"
+	./$(TEST_TARGET)
+
+
+#---------------------------------#
+# Make install:
+# copy header & library to Stage 
+#---------------------------------#
+
+.SILENT: install 
+install: 
+		$(CORPBUILD)/$(SH_FILE) stgLibPath $(LIB_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB) 
+		$(CORPBUILD)/$(SH_FILE) stgIncPath $(INC_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) deployHeaderList $(DEPLOYABLE_HEADERS)
+		$(CORPBUILD)/$(SH_FILE) cpHdr_to_stage $(DEPLOYABLE_HEADERS) $(CURR_DIR) $(INC_DESTINATION) 
+		$(CORPBUILD)/$(SH_FILE) hdrFilePermission_stg $(DEPLOYABLE_HEADERS) $(INC_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) cpLib_to_stage $(SHARED_LIB) $(CURR_DIR) $(LIB_DESTINATION)
+		$(CORPBUILD)/$(SH_FILE) linkingLib_stg $(LIB_DESTINATION) $(SHARED_LIB) $(LIB_NAME).so
+
+#---------------------------------#
+# Make stage_promote: 
+# copy header & library to Dev Mu
+# --------------------------------#
+
+.SILENT: stage_promote 
+stage_promote: 
+		$(CORPBUILD)/$(SH_FILE) muLibPath $(LIB_DESTINATION) $(MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB)
+		$(CORPBUILD)/$(SH_FILE) muIncPath $(INC_DESTINATION) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) deployHeaderList $(DEPLOYABLE_HEADERS)
+		$(CORPBUILD)/$(SH_FILE) cpHdr_to_mu $(DEPLOYABLE_HEADERS) $(INC_DESTINATION) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) hdrFilePermission_mu $(DEPLOYABLE_HEADERS) $(MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) cpLib_to_mu $(SHARED_LIB) $(LIB_DESTINATION) $(MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) linkingLib_mu $(MU_LIB_DEST) $(SHARED_LIB) $(LIB_NAME).so
+
+#------------------------------------#
+# Make delta_promote:
+# copy header & library to Master Mu
+# -----------------------------------#
+
+.SILENT: delta_promote 
+delta_promote: 
+		$(CORPBUILD)/$(SH_FILE) muLibPath $(LIB_DESTINATION) $(DELTA_MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) sharedLibName $(SHARED_LIB)
+		$(CORPBUILD)/$(SH_FILE) muIncPath $(INC_DESTINATION) $(DELTA_MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) deployHeaderList $(DEPLOYABLE_HEADERS)
+		$(CORPBUILD)/$(SH_FILE) cpHdr_to_mu $(DEPLOYABLE_HEADERS) $(INC_DESTINATION) $(DELTA_MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) hdrFilePermission_mu $(DEPLOYABLE_HEADERS) $(DELTA_MU_INC_DEST)
+		$(CORPBUILD)/$(SH_FILE) cpLib_to_mu $(SHARED_LIB) $(LIB_DESTINATION) $(DELTA_MU_LIB_DEST)
+		$(CORPBUILD)/$(SH_FILE) linkingLib_mu $(DELTA_MU_LIB_DEST) $(SHARED_LIB) $(LIB_NAME).so
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Test linking starts ...!!!
+/mu/bin/g++ -o  libmtmailpage_shared_tester mailpagetest/mailpagetest.o -pthread -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib:/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib:/mu/mtsdk/corplib/gcc1131/lib:/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST -L/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib -L/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib -L/mu/mtsdk/corplib/gcc1131/lib -L/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST -lMTMailPage
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `SendCalendarRequest()':
+/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:142: undefined reference to `mti::CMTMailw::CMTMailw()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:144: undefined reference to `mti::CMTMailw::SetServer(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:146: undefined reference to `mti::CMTMailw::SetFrom(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:147: undefined reference to `mti::CMTMailw::SetTo(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:148: undefined reference to `mti::CMTMailw::SetSubject(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:149: undefined reference to `mti::CMTMailw::SetText(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:151: undefined reference to `mti::CMTMailw::SetCalendar(wchar_t const*, wchar_t const*, wchar_t const*, long, long, wchar_t const*, long)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:153: undefined reference to `mti::CMTMailw::Send()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:154: undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `SendCalendarUpdate()':
+/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:161: undefined reference to `mti::CMTMailw::CMTMailw()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:165: undefined reference to `mti::CMTMailw::SetServer(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:167: undefined reference to `mti::CMTMailw::SetFrom(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:168: undefined reference to `mti::CMTMailw::SetTo(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:169: undefined reference to `mti::CMTMailw::SetSubject(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:170: undefined reference to `mti::CMTMailw::SetText(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:172: undefined reference to `mti::CMTMailw::SetCalendar(wchar_t const*, wchar_t const*, wchar_t const*, long, long, wchar_t const*, long)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:174: undefined reference to `mti::CMTMailw::Send()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:175: undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `SendCalendarCancel()':
+/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:180: undefined reference to `mti::CMTMailw::CMTMailw()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:183: undefined reference to `mti::CMTMailw::SetServer(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:185: undefined reference to `mti::CMTMailw::SetFrom(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:186: undefined reference to `mti::CMTMailw::SetTo(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:187: undefined reference to `mti::CMTMailw::SetSubject(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:188: undefined reference to `mti::CMTMailw::SetText(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:190: undefined reference to `mti::CMTMailw::SetCalendar(wchar_t const*, wchar_t const*, wchar_t const*, long, long, wchar_t const*, long)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:192: undefined reference to `mti::CMTMailw::Send()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:193: undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `SendCalendarRecurRequest()':
+/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:199: undefined reference to `mti::CMTMailw::CMTMailw()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:201: undefined reference to `mti::CMTMailw::SetServer(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:203: undefined reference to `mti::CMTMailw::SetFrom(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:204: undefined reference to `mti::CMTMailw::SetTo(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:205: undefined reference to `mti::CMTMailw::SetSubject(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:206: undefined reference to `mti::CMTMailw::SetText(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:208: undefined reference to `mti::CMTMailw::SetCalendar(wchar_t const*, wchar_t const*, wchar_t const*, long, long, wchar_t const*, long, wchar_t const*, long, long, wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:210: undefined reference to `mti::CMTMailw::Send()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:211: undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `SendCalendarRecurUpdate()':
+/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:214: undefined reference to `mti::CMTMailw::CMTMailw()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:216: undefined reference to `mti::CMTMailw::SetServer(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:218: undefined reference to `mti::CMTMailw::SetFrom(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:219: undefined reference to `mti::CMTMailw::SetTo(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:220: undefined reference to `mti::CMTMailw::SetSubject(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:221: undefined reference to `mti::CMTMailw::SetText(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:223: undefined reference to `mti::CMTMailw::SetCalendar(wchar_t const*, wchar_t const*, wchar_t const*, long, long, wchar_t const*, long, wchar_t const*, long, long, wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:225: undefined reference to `mti::CMTMailw::Send()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:226: undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `SendCalendarRecurCancel()':
+/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:229: undefined reference to `mti::CMTMailw::CMTMailw()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:231: undefined reference to `mti::CMTMailw::SetServer(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:233: undefined reference to `mti::CMTMailw::SetFrom(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:234: undefined reference to `mti::CMTMailw::SetTo(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:235: undefined reference to `mti::CMTMailw::SetSubject(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:236: undefined reference to `mti::CMTMailw::SetText(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:238: undefined reference to `mti::CMTMailw::SetCalendar(wchar_t const*, wchar_t const*, wchar_t const*, long, long, wchar_t const*, long, wchar_t const*, long, long, wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:240: undefined reference to `mti::CMTMailw::Send()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:241: undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `widetest()':
+/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:753: undefined reference to `mti::CMTPagew::CMTPagew()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:771: undefined reference to `mti::CMTPagew::SetTo(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:773: undefined reference to `mti::CMTPagew::SetMessage(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:774: undefined reference to `mti::CMTPagew::SetFrom(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:775: undefined reference to `mti::CMTPagew::SetAfter(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:776: undefined reference to `mti::CMTPagew::SetSystem(wchar_t const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:780: undefined reference to `mti::CMTPagew::GetTo()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:781: undefined reference to `mti::CMTPagew::GetPageMsg()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:782: undefined reference to `mti::CMTPagew::GetFrom()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:783: undefined reference to `mti::CMTPagew::GetAfter()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:784: undefined reference to `mti::CMTPagew::GetSystem()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:816: undefined reference to `mti::CMTPagew::Send()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:818: undefined reference to `mti::CMTPagew::GetStatusCode()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:819: undefined reference to `mti::CMTPagew::GetStatusText()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:823: undefined reference to `mti::CMTPagew::~CMTPagew()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `SendCalendarRequest() [clone .cold]':
+mailpagetest.cpp:(.text.unlikely+0x4): undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `SendCalendarUpdate() [clone .cold]':
+mailpagetest.cpp:(.text.unlikely+0x14): undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `SendCalendarCancel() [clone .cold]':
+mailpagetest.cpp:(.text.unlikely+0x24): undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `SendCalendarRecurRequest() [clone .cold]':
+mailpagetest.cpp:(.text.unlikely+0x34): undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `SendCalendarRecurUpdate() [clone .cold]':
+mailpagetest.cpp:(.text.unlikely+0x44): undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o:mailpagetest.cpp:(.text.unlikely+0x54): more undefined references to `mti::CMTMailw::~CMTMailw()' follow
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `widetest() [clone .cold]':
+mailpagetest.cpp:(.text.unlikely+0x64): undefined reference to `mti::CMTPagew::~CMTPagew()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `main.cold':
+/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:672: undefined reference to `mti::CMTMailw::~CMTMailw()'
+/usr/bin/ld: mailpagetest/mailpagetest.o: in function `main':
+/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:386: undefined reference to `mti::CMTMailw::CMTMailw()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:418: undefined reference to `mti::CMTMailw::SetFrom(char const*, char const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:428: undefined reference to `mti::CMTMailw::SetSubject(char const*, char const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:485: undefined reference to `mti::CMTMailw::SetTo(char const*, char const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:509: undefined reference to `mti::CMTMailw::SetText(char const*, char const*)'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:652: undefined reference to `mti::CMTMailw::Send()'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:658: undefined reference to `mti::CMTMailw::GetStatusText() const'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:658: undefined reference to `mti::CMTMailw::GetStatusCode() const'
+/usr/bin/ld: /home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST/mailpagetest/mailpagetest.cpp:672: undefined reference to `mti::CMTMailw::~CMTMailw()'
+collect2: error: ld returned 1 exit status
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Test linking starts ...!!!
 /mu/bin/g++ -o  libmtmailpage_shared_tester mailpagetest/mailpagetest.o -pthread -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,/mu/dev/corplib/cppunit/1.15.2-gcc1131-rhel9-64/lib:/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib:/mu/mtsdk/corplib/gcc1131/lib:~/IOSS-lib-MTMailPageRHEL9-LinuxTEST:~/IOSS-lib-MTMailPageRHEL9-LinuxTEST/libMTMailPage.so: -L/mu/dev/corplib/cppunit/1.15.2-gcc1131-rhel9-64/lib -L/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib -L/mu/mtsdk/corplib/gcc1131/lib -L~/IOSS-lib-MTMailPageRHEL9-LinuxTEST -L~/IOSS-lib-MTMailPageRHEL9-LinuxTEST/libMTMailPage.so -lMTMailPage
 /usr/bin/ld: cannot find -lMTMailPage
