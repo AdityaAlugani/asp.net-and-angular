@@ -1,3 +1,27 @@
+/mu/bin/g++ -o  libmtmailpage_shared_tester cmtmailw.o  cmtpagew.o  mtmailpage.o  mailpagetest/mailpagetest.o -pthread -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib:/usr/lib64:/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib:/mu/mtsdk/corplib/gcc1131/lib:/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST -L/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib -L/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib -L/mu/mtsdk/corplib/gcc1131/lib -L/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST -L/usr/lib64 -lMTMailPage
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 U close@GLIBC_2.2.5
                  U connect@GLIBC_2.2.5
                  U cuserid@GLIBC_2.2.5
