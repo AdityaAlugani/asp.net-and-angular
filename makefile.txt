@@ -1,3 +1,361 @@
+#==============================================================================
+# File:          $HeadURL: http://svn/corp/CS/ISS/Perl%20Support%20Utilities/corplib_vs2017/ConfigDirs_Perl_Module/ConfigDirs.pm $
+# Revision:      $LastChangedRevision: 553 $
+# Modified By:   $LastChangedBy: kgupta $
+# Modified Date: $LastChangedDate: 2017-06-14 04:04:14 -0600 (Wed, 14 Jun 2017) $
+#==============================================================================
+
+#  This function will get the proper library and includes directories
+#  based on platform and Perl version.  Right now only Unix really
+#  needs this.  Adding a Windows section is also a possibility.
+#
+#  Created:   31-Oct-2001 ZVICKERY
+#  Modified:  21-Aug-2002 ZVICKERY   Add support for Perl 5.8.0.
+#  Modified:  24-Jul-2003 TSCHERESKY Modified the Solaris section to support non-STLport Perl 5.8.0 under /mu.
+#  Modified:  18-Aug-2003 TSCHERESKY Modified the Linux   section to support non-STLport Perl 5.8.0 under /mu.
+#  Rewritten: 05-Oct-2003 TSCHERESKY Rewrote this module for better organization and to support multiple Perls
+#  Modified:  10-Jul-2005 TSCHERESKY Add support for Perl 5.8.4.
+#  Modified:  09-Apr-2010 TSCHERESKY Add support for 64-bit Perl 5.10.1.
+#  Modified:  19-Oct-2010 TSCHERESKY Add support for 64-bit Perl 5.12.2.
+#  Modified:  27-Feb-2013 TSCHERESKY Added $perlvers, $perlarch to info returned for greater Makefile.PL granularity.
+#  Modified:  07-Feb-2017 KSINGH Add support for 64-bit Perl 5.24.1.
+
+package ConfigDirs;
+
+use Exporter;
+use Config;
+use strict;
+
+our (@ISA, @EXPORT);
+
+@ISA = qw(Exporter);
+@EXPORT = qw(GetLibInc);
+
+
+sub GetLibInc
+{
+    my $os       = $Config{'osname'};
+    my $prefix   = $Config{'prefix'};
+    my $perlvers = $Config{'version'};
+    my $perlarch = $Config{'archlibexp'};
+
+    my ( $libs,$inc,$install,$runlib );
+
+    $install = 'vendor'; ## Micron Modules.
+
+    my ( $deltalibdir,$deltaincdir,$prodincdir,$prodlibdir,$stlincdir,$stllibdir );
+
+    if ( $os eq "solaris" )
+    {
+        #print "os=$os,osvers=$Config{'osvers'},perlvers=$perlvers\n";
+        if ( ( $Config{'osvers'} eq "2.8" ) && ( $perlvers eq "5.10.0" ) )
+        {
+            print "\nUsing Solaris 8 Perl 5.10.0 configuration.\n\n";
+
+            $prodlibdir  = '/mu/mtsdk/corplib/gcc422-sunos58/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/gcc422-sunos58/include';
+            $stllibdir   = '/mu/sdk/gcc/4.2.2-sunos58/lib';
+
+            $libs        = "-L$prodlibdir -L$stllibdir ";
+            $inc         = "-I$prodincdir -I.. ";
+            $runlib      = "-G -R$stllibdir -R$prodlibdir";
+        }
+        if ( ( $Config{'osvers'} eq "2.8" ) && ( $perlvers eq "5.8.4" ) )
+        {
+            print "\nUsing Solaris 8 Perl 5.8.4 configuration.\n\n";
+
+            $deltalibdir = '/mu/mtsdk/corplib/gcc331-sunos58/delta/lib';
+            $deltaincdir = '/mu/mtsdk/corplib/gcc331-sunos58/delta/include';
+            $prodlibdir  = '/mu/mtsdk/corplib/gcc331-sunos58/prod/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/gcc331-sunos58/prod/include';
+            $stllibdir   = '/mu/sdk/gcc/3.3.1-sunos58/lib';
+
+            $libs        = "-L$prodlibdir -L$deltalibdir -L$stllibdir ";
+            $inc         = "-I$deltaincdir -I$prodincdir -I.. ";
+            $runlib      = "-G -Wl,-rpath,/mu/sdk/gcc/3.3.1-sunos58/lib,-rpath,/mu/mtsdk/corplib/gcc331-sunos58/prod/lib";
+            #$runlib      = "-shared -L$stllibdir -L$prodlibdir -rpath $stllibdir -rpath $prodlibdir ";
+        }
+        elsif ( ( $Config{'osvers'} eq "2.8" ) && ( $perlvers eq "5.8.1" ) )
+        {
+            print "\nUsing Solaris 8 Perl 5.8.1 ( non-STLport ) configuration.\n\n";
+
+            $deltalibdir = '/mu/mtsdk/corplib/gcc331-sunos58/delta/lib';
+            $deltaincdir = '/mu/mtsdk/corplib/gcc331-sunos58/delta/include';
+            $prodlibdir  = '/mu/mtsdk/corplib/gcc331-sunos58/prod/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/gcc331-sunos58/prod/include';
+            $stllibdir   = '/mu/sdk/gcc/3.3.1-sunos58/lib';
+
+            $libs        = "-L$prodlibdir -L$deltalibdir -L$stllibdir ";
+            $inc         = "-I$deltaincdir -I$prodincdir ";
+            $runlib      = "-G -Wl,-rpath,/mu/sdk/gcc/3.3.1-sunos58/lib,-rpath,/mu/mtsdk/corplib/gcc331-sunos58/prod/lib";
+            #$runlib      = "-shared -L$stllibdir -L$prodlibdir -rpath $stllibdir -rpath $prodlibdir ";
+        }
+        elsif ( ( $Config{'osvers'} eq "2.6" ) && ( $perlvers eq "5.8.0" ) )
+        {
+            print "\nUsing Solaris 2.6 Perl 5.8.0 ( non-STLport ) configuration.\n\n";
+
+            $deltalibdir = '/mu/mtsdk/corplib/gcc331-sunos56/delta/lib';
+            $deltaincdir = '/mu/mtsdk/corplib/gcc331-sunos56/delta/include';
+            $prodlibdir  = '/mu/mtsdk/corplib/gcc331-sunos56/prod/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/gcc331-sunos56/prod/include';
+            $stllibdir   = '/mu/sdk/gcc/3.3.1-sunos56/lib';
+
+            $libs        = "-L$prodlibdir -L$deltalibdir -L$stllibdir ";
+            $inc         = "-I$deltaincdir -I$prodincdir ";
+            $runlib      = "-G -Wl,-rpath,/mu/sdk/gcc/3.3.1-sunos56/lib,-rpath,/mu/mtsdk/corplib/gcc331-sunos56/prod/lib";
+            #$runlib      = "-shared -L$stllibdir -L$prodlibdir -rpath $stllibdir -rpath $prodlibdir ";
+        }
+        elsif  ( ( $Config{'osvers'} eq "2.6" ) && ( $perlvers eq "5.6.1" ) && ( $prefix eq "/usr/local/micron/perl32/5.6.1" ) )
+        {
+            print "\nUsing Solaris 2.6 Perl 5.6.1 ( STLport ) configuration.\n\n";
+
+            $deltalibdir = '/usr/local/micron/delta/stlport/451-gcc2951/lib';
+            $deltaincdir = '/usr/local/micron/delta/stlport/451-gcc2951/include';
+            $prodincdir  = '/usr/local/micron/prod/stlport/451-gcc2951/include';
+            $prodlibdir  = '/usr/local/micron/prod/stlport/451-gcc2951/lib';
+            $stllibdir   = '/usr/local/micron/sdk/stlport/451-gcc2951/include/stlport';
+
+            $libs        = "-L$deltalibdir -R$prodlibdir ";
+            $inc         = "-I$stllibdir -I$deltaincdir -I$prodincdir";
+        }
+        elsif  ( ( $Config{'osvers'} eq "2.6" ) && ( $perlvers eq "5.6.1" ) && ( $prefix eq "/usr/local/micron/perl32/prod" ) )
+        {
+            print "\nSurprisingly you are using Perl 5.6.1 standard configuration.\n";
+            print "Are you sure you want to modify something that was deprecated, long ago?\n";
+        }
+
+    }
+    elsif ( $os eq "linux" )
+    {
+        if ( $prefix eq '/mu/apps/perl/5.24.1-gcc540-rhel7-64' )
+        {
+            print "\nUsing Red Hat Enterprise Linux Perl 5.24.1 configuration.\n\n";
+
+            $prodlibdir  = '/mu/mtsdk/corplib/gcc540/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/gcc540/include';
+            $stllibdir   = '/mu/dev/gcc/540/lib64';
+
+            $libs        = "-L$prodlibdir -L$stllibdir ";
+            $inc         = "-I$prodincdir -I.. "; # .. helps find mti_xs_common.h
+            $runlib      = "-fPIC -shared -L$stllibdir -L$prodlibdir -rpath $stllibdir -rpath $prodlibdir --eh-frame-hdr --enable-new-dtags ";
+        }
+        elsif ( $prefix eq '/mu/apps/perl/5.12.2-gcc443-rhel5-64' )
+        {
+            print "\nUsing Red Hat Enterprise Linux Perl 5.12.2 configuration.\n\n";
+
+            $prodlibdir  = '/mu/mtsdk/corplib/gcc443-rhel5-64/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/gcc443-rhel5-64/include';
+            $stllibdir   = '/mu/sdk/gcc/4.4.3-rhel5-64/lib64';
+
+            $libs        = "-L$prodlibdir -L$stllibdir ";
+            $inc         = "-I$prodincdir -I.. "; # .. helps find mti_xs_common.h
+            $runlib      = "-fPIC -shared -L$stllibdir -L$prodlibdir -rpath $stllibdir -rpath $prodlibdir --eh-frame-hdr --enable-new-dtags ";
+        }
+        elsif ( $prefix eq '/mu/apps/perl/5.10.1-gcc443-rhel5-64' )
+        {
+            print "\nUsing Red Hat Enterprise Linux Perl 5.10.1 configuration.\n\n";
+
+            $prodlibdir  = '/mu/mtsdk/corplib/gcc443-rhel5-64/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/gcc443-rhel5-64/include';
+            $stllibdir   = '/mu/sdk/gcc/4.4.3-rhel5-64/lib64';
+
+            $libs        = "-L$prodlibdir -L$stllibdir ";
+            $inc         = "-I$prodincdir -I.. "; # .. helps find mti_xs_common.h
+            $runlib      = "-shared -L$stllibdir -L$prodlibdir -rpath $stllibdir -rpath $prodlibdir --eh-frame-hdr --enable-new-dtags ";
+        }
+        elsif ( $prefix eq "/mu/apps/perl/5.10.0" )
+        {
+            print "\nUsing Red Hat Enterprise Linux Perl 5.10.0 configuration.\n\n";
+
+            $prodlibdir  = '/mu/mtsdk/corplib/gcc422/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/gcc422/include';
+            $stllibdir   = '/mu/sdk/gcc/4.2.2/lib';
+
+            $libs        = "-L$prodlibdir -L$stllibdir ";
+            $inc         = "-I$prodincdir -I.. "; # .. helps find mti_xs_common.h
+            $runlib      = "-shared -L$stllibdir -L$prodlibdir -Wl,-rpath,$stllibdir -Wl,-rpath,$prodlibdir --eh-frame-hdr --enable-new-dtags ";
+        }
+        elsif ( $prefix eq "/mu/apps/perl/5.8.4" )
+        {
+            print "\nUsing Red Hat Enterprise Linux Perl 5.8.4 configuration.\n\n";
+
+            $deltalibdir = '/mu/mtsdk/corplib/gcc331/delta/lib';
+            $deltaincdir = '/mu/mtsdk/corplib/gcc331/delta/include';
+            $prodlibdir  = '/mu/mtsdk/corplib/gcc331/prod/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/gcc331/prod/include';
+            $stllibdir   = '/mu/sdk/gcc/3.3.1/lib';
+
+            $libs        = "-L$prodlibdir -L$deltalibdir -L$stllibdir ";
+            $inc         = "-I$deltaincdir -I$prodincdir -I.. ";
+            $runlib      = "-shared -L$stllibdir -L$prodlibdir -rpath $stllibdir -rpath $prodlibdir --eh-frame-hdr --enable-new-dtags ";
+        }
+        elsif ( $prefix eq "/mu/apps/perl/5.8.0" )
+        {
+            print "\nUsing Linux RH 8.0 Perl 5.8.0 ( non-STLport ) configuration.\n\n";
+
+            $deltalibdir = '/mu/mtsdk/corplib/gcc331/delta/lib';
+            $deltaincdir = '/mu/mtsdk/corplib/gcc331/delta/include';
+            $prodlibdir  = '/mu/mtsdk/corplib/gcc331/prod/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/gcc331/prod/include';
+            $stllibdir   = '/mu/sdk/gcc/3.3.1/lib';
+
+            $libs        = "-L$prodlibdir -L$deltalibdir -L$stllibdir ";
+            $inc         = "-I$deltaincdir -I$prodincdir ";
+            $runlib      = "-shared -L$stllibdir -L$prodlibdir -rpath $stllibdir -rpath $prodlibdir --eh-frame-hdr ";
+        }
+        elsif ( $prefix eq "/mu/apps/perl/5.8.0-mt1" )
+        {
+            print "\nUsing Linux RH 7.2 Perl 5.8.0 ( STLport ) configuration.\n\n";
+
+            $deltalibdir = '/mu/mtsdk/corplib/gcc2953stlp451/delta/lib';
+            $deltaincdir = '/mu/mtsdk/corplib/gcc2953stlp451/delta/include';
+            $prodlibdir  = '/mu/mtsdk/corplib/gcc2953stlp451/prod/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/gcc2953stlp451/prod/include';
+            $stlincdir   = '/mu/sdk/stlport/451-gcc2953/include/stlport';
+            $stllibdir   = '/mu/sdk/stlport/451-gcc2953/lib';
+
+            $libs        = "-L$deltalibdir ";
+            $inc         = "-I$stlincdir -I$deltaincdir";
+            $runlib      = "-shared -L$stllibdir -L/usr/local/lib -Wl,-R$stllibdir:$prodlibdir ";
+        }
+        else
+        {
+            print "\nError: the Perl you are using is unsupported.\nPlease re-run the command with a supported Perl.\n";
+        }
+    }
+    elsif ( $os eq "aix" )
+    {
+        if ( $prefix eq "/mu/apps/perl/5.8.0" )
+        {
+            print "\nUsing Delta AIX non-STLport Perl 5.8.0 configuration.\n\n";
+
+            $deltalibdir = '/mu/mtsdk/corplib/vacpp5020/delta/lib';
+            $deltaincdir = '/mu/mtsdk/corplib/vacpp5020/delta/include';
+            $prodlibdir  = '/mu/mtsdk/corplib/vacpp5020/prod/lib';
+            $prodincdir  = '/mu/mtsdk/corplib/vacpp5020/prod/include';
+
+            $libs        = "-L$prodlibdir -L$deltalibdir ";
+            $inc         = "-I$deltaincdir -I$prodincdir ";
+
+            # like it when its combined with $libs.
+            #$runlib = "-bhalt:4 -bM:SRE -bI:$(PERL_INC)/perl.exp -bE:$(BASEEXT).exp -bnoentry -lpthreads -lc_r -L$prodlibdir ";
+        }
+    }
+
+    return ( $libs,$inc,$install,$os,$runlib,$perlvers,$perlarch );
+}
+
+# my ($libs, $inc, $install, $os, $runlib, $perlvers, $perlarch) = GetLibInc($os);
+
+1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# MakeMaker script for generating a Makefile to build Micron::CMTXML2.
+#
+# File:          $HeadURL: http://svn/corp/CS/ISS/MTXML2/Perl%20Module%20CMTXML2/branches/corplib_VS2015/Makefile.PL $
+# Revision:      $LastChangedRevision: 783 $
+# Modified By:   $LastChangedBy: tscheresky $
+# Modified Date: $LastChangedDate: 2011-01-20 09:56:45 -0700 (Thu, 20 Jan 2011) $
+
+use ExtUtils::MakeMaker;
+
+use strict;
+use lib '..';
+use ConfigDirs;
+use Config;
+
+my ( $libs,$inc,$install,$os,$runlib ) = ConfigDirs::GetLibInc();
+
+
+if( $os eq 'solaris' )
+  {
+    WriteMakefile('INSTALLDIRS' => $install,
+                  'NAME'        => 'Micron::CMTXML2',
+                  'VERSION_FROM' => 'CMTXML2.pm'
+                 );
+  }
+elsif ($os eq 'linux')
+{
+    WriteMakefile('INSTALLDIRS' => $install,
+                  'NAME'        => 'Micron::CMTXML2',
+                  'VERSION_FROM' => 'CMTXML2.pm'
+                 );
+
+}
+elsif ($os eq "MSWin32")
+  {
+    WriteMakefile(
+                  'NAME'      => 'Micron::CMTXML2',
+                  'VERSION_FROM' => 'CMTXML2.pm'
+                 );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /mu/bin/g++ -o  libmtmailpage_shared_tester cmtmailw.o  cmtpagew.o  mtmailpage.o  mailpagetest/mailpagetest.o -pthread -Wl,--enable-new-dtags -Wl,-rpath,.,-rpath,/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib:/usr/lib64:/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib:/mu/mtsdk/corplib/gcc1131/lib:/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST -L/mu/dev/cppunit/1.15.2-gcc1131-rhel9-64/lib -L/home/sysprog/libraries/stage/Linux/MU-RHEL90/gcc1131/lib -L/mu/mtsdk/corplib/gcc1131/lib -L/home/aalugani/IOSS-lib-MTMailPageRHEL9-LinuxTEST -L/usr/lib64 -lMTMailPage
 
 
