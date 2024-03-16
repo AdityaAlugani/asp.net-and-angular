@@ -1,3 +1,39 @@
+
+int Shop(int i,vector<int> first,vector<int> second,map<int,pair<int,int>> umap)
+{
+    if(i==vec.size())
+    return {0,0};
+    if(umap.find(i)!=umap.end())
+    return umap[i];
+    
+    pair<int,int> p=Shop(i+1,first,second,vec);
+    int n_=max(p.first,p.first+first[i]);
+    int _n=max(p.second,p.second+second[i]);
+    return umap[i]={n_,_n};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #==============================================================================
 # File:          $HeadURL: http://svn/corp/CS/ISS/Perl%20Support%20Utilities/corplib_vs2017/ConfigDirs_Perl_Module/ConfigDirs.pm $
 # Revision:      $LastChangedRevision: 553 $
