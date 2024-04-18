@@ -1,3 +1,103 @@
+tie %Config, 'Config', {
+    archlibexp => '/usr/lib64/perl5',
+    archname => 'x86_64-linux-thread-multi',
+    cc => 'gcc',
+    d_readlink => 'define',
+    d_symlink => 'define',
+    dlext => 'so',
+    dlsrc => 'dl_dlopen.xs',
+    dont_use_nlink => undef,
+    exe_ext => '',
+    inc_version_list => ' ',
+    intsize => '4',
+    ldlibpthname => 'LD_LIBRARY_PATH',
+    libpth => '/usr/local/lib64 /lib64 /usr/lib64 /usr/local/lib /usr/lib /lib/../lib64 /usr/lib/../lib64 /lib',
+    osname => 'linux',
+    osvers => '4.18.0-193.28.1.el8_2.x86_64',
+    path_sep => ':',
+    privlibexp => '/usr/share/perl5',
+    scriptdir => '/usr/bin',
+    sitearchexp => '/usr/local/lib64/perl5/5.32',
+    sitelibexp => '/usr/local/share/perl5/5.32',
+    so => 'so',
+    useithreads => 'define',
+    usevendorprefix => 'define',
+    version => '5.32.1',
+};
+
+
+RHEL9 config
+
+
+
+
+
+
+tie %Config, 'Config', {
+    archlibexp => '/mu/apps/perl/5.24.1-gcc540-rhel7-64/lib',
+    archname => 'x86_64-linux-thread-multi',
+    cc => '/mu/bin/gcc',
+    d_readlink => 'define',
+    d_symlink => 'define',
+    dlext => 'so',
+    dlsrc => 'dl_dllopen.xs',
+    dont_use_nlink => undef,
+    exe_ext => '',
+    inc_version_list => ' ',
+    intsize => '4',
+    ldlibpthname => 'LD_LIBRARY_PATH',
+    libpth => '/lib /lib/../lib64 /lib64 /usr/lib /usr/lib/../lib64 /usr/lib64 /usr/local/lib /usr/local/lib64',
+    osname => 'linux',
+    osvers => '3.10.0-327.28.2.el7.x86_64',
+    path_sep => ':',
+    privlibexp => '/mu/apps/perl/5.24.1-gcc540-rhel7-64/lib',
+    scriptdir => '/mu/apps/perl/5.24.1-gcc540-rhel7-64/bin',
+    sitearchexp => '/mu/sdk/perl/5.24.1-gcc540-rhel7-64/lib',
+    sitelibexp => '/mu/sdk/perl/5.24.1-gcc540-rhel7-64/lib',
+    so => 'so',
+    useithreads => 'define',
+    usevendorprefix => 'define',
+    version => '5.24.1',
+};
+
+RHEL7
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int Shop(int i,vector<int> first,vector<int> second,map<int,pair<int,int>> umap)
 {
