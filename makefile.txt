@@ -1,3 +1,52 @@
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 ar -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 as -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 c++ -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 cc -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 c++filt -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 cpp -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 dbserver -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 g++ -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 gcc -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 gcov -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 gdb -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 gnm -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 gprof -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 ld -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 26  2023 make -> mtexec
+lrwxrwxrwx 1 corplib corplib 24 May 19  2023 mtexec -> /mu/mtapps/mtexec/mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 nm -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 objcopy -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 objdump -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 perl -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 perlcore -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 perldelta -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 May 19  2023 perldoc -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 ranlib -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 readelf -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 size -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 strings -> mtexec
+lrwxrwxrwx 1 corplib corplib  6 Jul 25  2023 strip -> mtexec
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 tie %Config, 'Config', {
     archlibexp => '/usr/lib64/perl5',
     archname => 'x86_64-linux-thread-multi',
